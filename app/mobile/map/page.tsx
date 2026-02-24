@@ -64,9 +64,10 @@ function MapDashboardContent() {
                 return;
             }
 
+            // Only fetch columns needed for map markers — much faster than SELECT *
             const { data, error } = await supabase
                 .from("areas")
-                .select("*")
+                .select("id, name, latitude, longitude, current_visit_score")
                 .order("current_visit_score", { ascending: false });
 
             if (error) {
@@ -154,17 +155,18 @@ function MapDashboardContent() {
 
     return (
         <main className="w-full h-screen relative flex flex-col bg-gray-950">
-            {/* Debug Error Banner */}
+            {/* Error Banner — only shows on real errors, not slow loads */}
             {loadError && (
                 <div className="absolute top-0 left-0 right-0 z-[9999] bg-red-600 text-white text-xs p-3 text-center font-mono leading-snug">
                     ⚠️ {loadError}
                 </div>
             )}
-            {/* Data loading indicator */}
-            {isDataLoading && (
-                <div className="absolute top-3 right-3 z-[9999] bg-gray-900/80 backdrop-blur-sm text-indigo-400 text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-                    Loading data...
+            {/* Subtle loading pill — hides itself once data arrives */}
+            {isDataLoading && areas.length === 0 && (
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[9999] bg-gray-900/90 backdrop-blur-sm text-indigo-300 text-xs px-4 py-2 rounded-full flex items-center gap-2 shadow-xl">
+                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
             )}
             {/* Top Search Bar */}

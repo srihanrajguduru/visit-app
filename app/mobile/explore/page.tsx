@@ -22,7 +22,7 @@ export default function MobileExplorePage() {
             try {
                 const { data, error } = await supabase
                     .from("areas")
-                    .select("*")
+                    .select("id, name, latitude, longitude, current_visit_score")
                     .order("current_visit_score", { ascending: false, nullsFirst: false })
                     .limit(20);
 
