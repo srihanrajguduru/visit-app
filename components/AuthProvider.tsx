@@ -69,9 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     document.cookie = `__session=${await user.getIdToken()}; path=/; max-age=3600; Secure; SameSite=Strict`;
                     document.cookie = `__role=${role}; path=/; max-age=3600; Secure; SameSite=Strict`;
 
-                    // Route users on login
+                    // Route users on login — ONLY redirect from the auth pages, not from app pages
                     const path = window.location.pathname;
-                    if (path === '/' || path === '/login' || path === '/signup') {
+                    const isOnAuthPage = path === '/' || path === '/login' || path === '/signup';
+                    if (isOnAuthPage) {
                         window.location.href = isDev ? '/developer' : '/dashboard';
                     }
                 } catch (e) {
