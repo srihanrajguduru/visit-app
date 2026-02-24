@@ -1,0 +1,19 @@
+(node:10680) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[2026-02-24T09:37:52.365Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[2026-02-24T09:37:52.366Z] > authorizing via signed-in user (srihanrajg@gmail.com)
+[2026-02-24T09:37:52.366Z] [iam] checking project visit-aeb1b for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[2026-02-24T09:37:52.367Z] Checked if tokens are valid: true, expires at: 1771928385648
+[2026-02-24T09:37:52.371Z] Checked if tokens are valid: true, expires at: 1771928385648
+[2026-02-24T09:37:52.372Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/visit-aeb1b:testIamPermissions [none]
+[2026-02-24T09:37:52.372Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/visit-aeb1b:testIamPermissions  x-goog-user-project=visit-aeb1b
+[2026-02-24T09:37:52.372Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/visit-aeb1b:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[2026-02-24T09:37:52.740Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/visit-aeb1b:testIamPermissions 200
+[2026-02-24T09:37:52.740Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/visit-aeb1b:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[2026-02-24T09:37:52.741Z] Checked if tokens are valid: true, expires at: 1771928385648
+[2026-02-24T09:37:52.741Z] Checked if tokens are valid: true, expires at: 1771928385648
+[2026-02-24T09:37:52.741Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/visit-aeb1b [none]
+[2026-02-24T09:37:53.161Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/visit-aeb1b 200
+[2026-02-24T09:37:53.161Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/visit-aeb1b {"projectId":"visit-aeb1b","projectNumber":"473870007039","displayName":"Visit","name":"projects/visit-aeb1b","resources":{"hostingSite":"visit-aeb1b"},"state":"ACTIVE","etag":"1_f3cfe4ed-df29-444b-9fe9-1c1e008f84ff"}
+
+Error: Cannot deploy a web framework from source because the experiment webframeworks is not enabled. To enable webframeworks run firebase experiments:enable webframeworks
