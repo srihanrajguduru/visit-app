@@ -107,10 +107,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const logout = async () => {
         if (DEV_BYPASS) {
             document.cookie = `__session=; path=/; max-age=0;`;
+            document.cookie = `__role=; path=/; max-age=0;`;
             window.location.href = '/login';
             return;
         }
         await signOut(auth);
+        document.cookie = `__session=; path=/; max-age=0;`;
+        document.cookie = `__role=; path=/; max-age=0;`;
+        window.location.href = '/login';
     };
 
     return (
