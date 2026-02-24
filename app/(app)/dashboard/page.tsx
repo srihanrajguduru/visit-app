@@ -31,6 +31,8 @@ const darkMapStyle = [
     { featureType: "transit", elementType: "geometry", stylers: [{ color: "#1e293b" }] },
 ];
 
+export const dynamic = "force-dynamic";
+
 export default function DashboardPage() {
     const { user, logout } = useAuth();
     const [areas, setAreas] = useState<Area[]>([]);
