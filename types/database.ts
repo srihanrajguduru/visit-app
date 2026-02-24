@@ -99,6 +99,16 @@ export type Database = {
                 Insert: Omit<Database["public"]["Tables"]["visit_score_history"]["Row"], "id" | "created_at">;
                 Update: Partial<Database["public"]["Tables"]["visit_score_history"]["Insert"]>;
             };
+            saved_areas: {
+                Row: {
+                    id: string;
+                    user_id: string;
+                    area_id: string;
+                    created_at: string;
+                };
+                Insert: Omit<Database["public"]["Tables"]["saved_areas"]["Row"], "id" | "created_at">;
+                Update: Partial<Database["public"]["Tables"]["saved_areas"]["Insert"]>;
+            };
         };
     };
 };
@@ -110,3 +120,4 @@ export type VisitScore = Database["public"]["Tables"]["visit_scores"]["Row"];
 export type VisitScoreHistory = Database["public"]["Tables"]["visit_score_history"]["Row"];
 export type Dataset = Database["public"]["Tables"]["datasets"]["Row"];
 export type DatasetFile = Database["public"]["Tables"]["dataset_files"]["Row"];
+export type SavedArea = Database["public"]["Tables"]["saved_areas"]["Row"];
