@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRouter } from "next/navigation";
-import { MapPin, Mail, Lock, ArrowRight } from "lucide-react";
+import { MapPin, Mail, Lock, ArrowRight, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
@@ -46,8 +46,16 @@ export default function LoginPage() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="glass-card w-full max-w-md p-8"
+                className="glass-card w-full max-w-md p-8 relative"
             >
+                <Link
+                    href="/"
+                    className="absolute top-8 left-8 text-gray-400 hover:text-white transition-colors p-2 -ml-2 -mt-2 rounded-lg hover:bg-white/5"
+                    title="Back to Landing Page"
+                >
+                    <ArrowLeft className="w-5 h-5" />
+                </Link>
+
                 {/* Logo */}
                 <div className="flex items-center gap-2 mb-8 justify-center">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">

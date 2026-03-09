@@ -8,11 +8,22 @@ import ThemeToggle from "@/components/ThemeToggle";
 export default function LandingPage() {
   return (
     <div className="animated-gradient min-h-screen overflow-hidden relative">
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover z-0 opacity-40 mix-blend-screen pointer-events-none"
+      >
+        <source src="/videos/hero-bg.mp4" type="video/mp4" />
+      </video>
+      <div className="absolute inset-0 bg-black/60 z-0 pointer-events-none" />
+
       {/* Floating particles */}
       {[...Array(6)].map((_, i) => (
         <div
           key={i}
-          className="particle absolute rounded-full"
+          className="particle absolute rounded-full z-0"
           style={{
             width: `${20 + i * 15}px`,
             height: `${20 + i * 15}px`,
