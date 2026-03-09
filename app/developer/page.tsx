@@ -6,8 +6,6 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-// Initialize a generic Supabase client to fetch public stats (RLS on users determines what they see, 
-// here developers will view public stats)
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -22,17 +20,14 @@ export default function DeveloperOverview() {
 
     useEffect(() => {
         async function loadStats() {
-            // Fetch total areas
             const { count: areasCount } = await supabase
                 .from('areas')
                 .select('*', { count: 'exact', head: true });
 
-            // Fetch uploaded datasets count
             const { count: datasetsCount } = await supabase
                 .from('datasets')
                 .select('*', { count: 'exact', head: true });
 
-            // Fetch average visit score
             const { data: scores } = await supabase.from('visit_scores').select('visit_score');
             const avg = scores && scores.length > 0
                 ? scores.reduce((sum, curr) => sum + curr.visit_score, 0) / scores.length
@@ -49,16 +44,16 @@ export default function DeveloperOverview() {
     }, []);
 
     const statCards = [
-        { title: "Total Covered Areas", value: stats.areasCount.toString(), icon: Map, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
-        { title: "Datasets Managed", value: stats.datasetsCount.toString(), icon: Database, color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20" },
-        { title: "Avg Network Score", value: stats.avgScore.toFixed(1), icon: Activity, color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/20" },
-        { title: "Platform Engine", value: "Online", icon: Server, color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+        { title: "Total Covered Areas", value: stats.areasCount.toString(), icon: Map, color: "var(--brand-accent)", bgAlpha: "0.1", borderAlpha: "0.2" },
+        { title: "Datasets Managed", value: stats.datasetsCount.toString(), icon: Database, color: "var(--brand-primary)", bgAlpha: "0.1", borderAlpha: "0.2" },
+        { title: "Avg Network Score", value: stats.avgScore.toFixed(1), icon: Activity, color: "var(--brand-secondary)", bgAlpha: "0.1", borderAlpha: "0.2" },
+        { title: "Platform Engine", value: "Online", icon: Server, color: "var(--brand-secondary)", bgAlpha: "0.1", borderAlpha: "0.2" },
     ];
 
     const quickLinks = [
         { name: "Manage Datasets", desc: "Upload CSV/Excel environment data", href: "/developer/datasets", icon: Database },
         { name: "Score Control Board", desc: "Force recalculate and monitor scores", href: "/developer/visit-score", icon: Zap },
-        { name: "Property Verify", desc: "Approve titles and ownerships", href: "/developer/properties", icon: ShieldCheck },
+        { name: "Property Verify", desc: "Approve listings and verify owners", href: "/developer/properties", icon: ShieldCheck },
     ];
 
     return (
@@ -67,7 +62,8 @@ export default function DeveloperOverview() {
                 <motion.h1
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-3xl font-bold text-white mb-2"
+                    className="text-3xl font-bold mb-2"
+                    style={{ color: "var(--text-primary)" }}
                 >
                     Administrator Overview
                 </motion.h1>
@@ -75,9 +71,9 @@ export default function DeveloperOverview() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.1 }}
-                    className="text-gray-400"
+                    style={{ color: "var(--text-muted)" }}
                 >
-                    High-level system status and immediate access to Visit platform controls.
+                    High-level system status and immediate access to Vi-SiT platform controls.
                 </motion.p>
             </div>
 
@@ -90,18 +86,28 @@ export default function DeveloperOverview() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.1 }}
-                            className={`bg-[#111] border ${stat.border} rounded-2xl p-6 relative overflow-hidden group`}
+                            className="rounded-2xl p-6 relative overflow-hidden group theme-transition"
+                            style={{
+                                background: "var(--bg-surface)",
+                                border: "1px solid var(--border)",
+                            }}
                         >
-                            <div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform ${stat.color}`}>
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform" style={{ color: stat.color }}>
                                 <Icon className="w-16 h-16" />
                             </div>
                             <div className="flex items-center justify-between mb-4 relative z-10">
-                                <h3 className="text-gray-400 text-sm font-medium">{stat.title}</h3>
-                                <div className={`p-2 rounded-lg ${stat.bg} ${stat.color}`}>
+                                <h3 className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>{stat.title}</h3>
+                                <div
+                                    className="p-2 rounded-lg"
+                                    style={{
+                                        background: `color-mix(in srgb, ${stat.color} 10%, transparent)`,
+                                        color: stat.color,
+                                    }}
+                                >
                                     <Icon className="w-4 h-4" />
                                 </div>
                             </div>
-                            <p className="text-4xl font-bold text-white relative z-10">{stat.value}</p>
+                            <p className="text-4xl font-bold relative z-10" style={{ color: "var(--text-primary)" }}>{stat.value}</p>
                         </motion.div>
                     );
                 })}
@@ -113,24 +119,39 @@ export default function DeveloperOverview() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4 }}
                 >
-                    <div className="bg-[#111] border border-[#222] rounded-2xl p-6 h-full flex flex-col">
-                        <h2 className="text-lg font-semibold text-white mb-1">Quick Links</h2>
-                        <p className="text-sm text-gray-500 mb-6">Commonly accessed developer tools.</p>
+                    <div
+                        className="rounded-2xl p-6 h-full flex flex-col theme-transition"
+                        style={{
+                            background: "var(--bg-surface)",
+                            border: "1px solid var(--border)",
+                        }}
+                    >
+                        <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--text-primary)" }}>Quick Links</h2>
+                        <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>Commonly accessed developer tools.</p>
 
                         <div className="space-y-3 flex-1">
                             {quickLinks.map((link) => {
                                 const Icon = link.icon;
                                 return (
                                     <Link href={link.href} key={link.name}>
-                                        <div className="group flex items-center p-4 rounded-xl border border-[#222] hover:border-[#333] hover:bg-[#1a1a1a] transition-all cursor-pointer">
-                                            <div className="p-3 rounded-lg bg-[#222] text-gray-400 group-hover:text-white transition-colors">
+                                        <div
+                                            className="group flex items-center p-4 rounded-xl transition-all cursor-pointer theme-transition"
+                                            style={{ border: "1px solid var(--border)" }}
+                                        >
+                                            <div
+                                                className="p-3 rounded-lg transition-colors"
+                                                style={{
+                                                    background: "var(--bg-elevated)",
+                                                    color: "var(--text-muted)",
+                                                }}
+                                            >
                                                 <Icon className="w-5 h-5" />
                                             </div>
                                             <div className="ml-4 flex-1">
-                                                <h4 className="text-sm font-semibold text-gray-200 group-hover:text-blue-400 transition-colors">{link.name}</h4>
-                                                <p className="text-xs text-gray-500">{link.desc}</p>
+                                                <h4 className="text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>{link.name}</h4>
+                                                <p className="text-xs" style={{ color: "var(--text-muted)" }}>{link.desc}</p>
                                             </div>
-                                            <ArrowRight className="w-4 h-4 text-gray-600 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
+                                            <ArrowRight className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
                                         </div>
                                     </Link>
                                 );
@@ -144,29 +165,50 @@ export default function DeveloperOverview() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.5 }}
                 >
-                    <div className="bg-[#111] border border-[#222] rounded-2xl p-6 h-full relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 pointer-events-none" />
+                    <div
+                        className="rounded-2xl p-6 h-full relative overflow-hidden theme-transition"
+                        style={{
+                            background: "var(--bg-surface)",
+                            border: "1px solid var(--border)",
+                        }}
+                    >
                         <div className="relative z-10">
-                            <h2 className="text-lg font-semibold text-white mb-1">System Health Alert</h2>
-                            <p className="text-sm text-gray-500 mb-6">Real-time platform monitors.</p>
+                            <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--text-primary)" }}>System Health</h2>
+                            <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>Real-time platform monitors.</p>
 
                             <div className="space-y-4">
-                                <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 flex items-start">
+                                <div
+                                    className="p-4 rounded-xl flex items-start"
+                                    style={{
+                                        background: "rgba(65, 139, 70, 0.05)",
+                                        border: "1px solid rgba(65, 139, 70, 0.1)",
+                                    }}
+                                >
                                     <span className="relative flex h-3 w-3 mt-1 mr-3">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "var(--brand-secondary)" }} />
+                                        <span className="relative inline-flex rounded-full h-3 w-3" style={{ background: "var(--brand-secondary)" }} />
                                     </span>
                                     <div>
-                                        <h4 className="text-sm font-medium text-emerald-400 mb-1">Database Sync Active</h4>
-                                        <p className="text-xs text-gray-400 leading-relaxed">The main Supabase connection is healthy. Realtime hooks for visit_scores are currently attached and listening for developer mutations.</p>
+                                        <h4 className="text-sm font-medium mb-1" style={{ color: "var(--brand-secondary)" }}>Database Sync Active</h4>
+                                        <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                                            Supabase connection healthy. Realtime hooks for visit_scores attached and listening.
+                                        </p>
                                     </div>
                                 </div>
 
-                                <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10 flex items-start">
-                                    <div className="w-3 h-3 rounded-full bg-blue-500 mt-1 mr-3"></div>
+                                <div
+                                    className="p-4 rounded-xl flex items-start"
+                                    style={{
+                                        background: "rgba(13, 92, 138, 0.05)",
+                                        border: "1px solid rgba(13, 92, 138, 0.1)",
+                                    }}
+                                >
+                                    <div className="w-3 h-3 rounded-full mt-1 mr-3" style={{ background: "var(--brand-primary)" }} />
                                     <div>
-                                        <h4 className="text-sm font-medium text-blue-400 mb-1">Edge Functions Deployed</h4>
-                                        <p className="text-xs text-gray-400 leading-relaxed">calculate-visit-score is loaded on standard Next.js API routes with a 2ms cold start average.</p>
+                                        <h4 className="text-sm font-medium mb-1" style={{ color: "var(--brand-primary)" }}>Edge Functions Deployed</h4>
+                                        <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                                            calculate-visit-score is loaded on Next.js API routes with 2ms cold start average.
+                                        </p>
                                     </div>
                                 </div>
                             </div>

@@ -5,6 +5,7 @@ import { Area, AreaMetrics } from "@/types/database";
 import { supabase } from "@/lib/supabase";
 import { motion, useAnimation, PanInfo } from "framer-motion";
 import MobileVisitScoreCard from "./MobileVisitScoreCard";
+import MobilePropertyFeed from "./MobilePropertyFeed";
 import { X, Activity, Droplets, MapPin, ShieldAlert, Wifi, Building2, Search, Train, Bookmark } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { toast } from "sonner";
@@ -111,18 +112,18 @@ export default function MobileBottomSheet({ areas, selectedArea, visitScoreData,
 
     return (
         <motion.div
-            className="fixed left-0 right-0 bottom-0 z-[999] bg-gray-950 border-t border-gray-800 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)] touch-pan-y"
+            className="fixed left-0 right-0 bottom-0 z-[999] rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)] touch-pan-y theme-transition"
             initial={{ y: "100%" }}
             animate={controls}
             drag="y"
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={0.2}
             onDragEnd={handleDragEnd}
-            style={{ height: "85vh", maxHeight: "90vh", overflowY: "auto" }}
+            style={{ height: "85vh", maxHeight: "90vh", overflowY: "auto", background: "var(--bg-dark)", borderTop: "1px solid var(--border)" }}
         >
             {/* Drag Handle */}
             <div className="w-full flex justify-center pt-3 pb-4">
-                <div className="w-12 h-1.5 bg-gray-700 rounded-full" />
+                <div className="w-12 h-1.5 rounded-full" style={{ background: "var(--text-muted)", opacity: 0.4 }} />
             </div>
 
             {/* Header / Collapsed View */}
@@ -187,6 +188,8 @@ export default function MobileBottomSheet({ areas, selectedArea, visitScoreData,
                                 {isSaving ? "Updating..." : isSaved ? "Saved Area" : "Save Area"}
                             </button>
                         </div>
+
+                        <MobilePropertyFeed areaId={selectedArea.id} />
                     </div>
                 ) : hasAdvancedData ? (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -265,7 +268,14 @@ export default function MobileBottomSheet({ areas, selectedArea, visitScoreData,
 
                         {/* Section: Action */}
                         <div className="pt-4 flex flex-col gap-3">
-                            <button className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold rounded-2xl transition-colors shadow-lg shadow-indigo-500/20">
+                            <button
+                                onClick={() => {
+                                    setShowDetailedMode(true);
+                                    controls.start({ y: SNAP_POINTS.FULL, transition: { type: "spring", damping: 25, stiffness: 200 } });
+                                    setCurrentSnap(SNAP_POINTS.FULL);
+                                }}
+                                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold rounded-2xl transition-colors shadow-lg shadow-indigo-500/20"
+                            >
                                 Explore Properties Here
                             </button>
                             <button

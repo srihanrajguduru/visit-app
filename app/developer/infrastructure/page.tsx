@@ -4,6 +4,15 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { HardHat, Search, RefreshCw, AlertCircle, Plus, Save, MapPin, CheckCircle2, Train, Wifi, Route } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
+import { GoogleMap, useLoadScript, Marker } from "@react-google-maps/api";
+
+const mapContainerStyle = {
+    width: "100%",
+    height: "100%"
+};
+
+// Default to Hyderabad
+const defaultCenter = { lat: 17.3850, lng: 78.4867 };
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,6 +25,10 @@ export default function InfrastructureManagementPage() {
     const [saving, setSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [message, setMessage] = useState({ type: "", text: "" });
+
+    const { isLoaded } = useLoadScript({
+        googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,
+    });
 
     const [newInfra, setNewInfra] = useState({
         name: "",
@@ -34,7 +47,7 @@ export default function InfrastructureManagementPage() {
             .order("created_at", { ascending: false });
 
         if (error) {
-            if (error.code === '42P01') {
+            if (error.code === '42P01' || error.message.includes("Could not find the table")) {
                 // Mock if table doesn't exist
                 setInfrastructures(mockInfrastructure);
             } else {
@@ -72,7 +85,7 @@ export default function InfrastructureManagementPage() {
 
         if (error) {
             // if table missing, just add to local state
-            if (error.code === '42P01') {
+            if (error.code === '42P01' || error.message.includes("Could not find the table")) {
                 const fakeNew = { ...newInfra, id: Math.random().toString(), latitude: parseFloat(newInfra.latitude), longitude: parseFloat(newInfra.longitude) };
                 setInfrastructures([fakeNew, ...infrastructures]);
                 setMessage({ type: "success", text: "Infrastructure added to local grid view (Database table pending)." });
@@ -98,6 +111,16 @@ export default function InfrastructureManagementPage() {
         if (type.includes('Metro')) return <Train className="w-5 h-5 text-purple-400" />;
         if (type.includes('Internet') || type.includes('Fiber')) return <Wifi className="w-5 h-5 text-blue-400" />;
         return <Route className="w-5 h-5 text-yellow-400" />;
+    };
+
+    const handleMapClick = (e: google.maps.MapMouseEvent) => {
+        if (e.latLng) {
+            setNewInfra({
+                ...newInfra,
+                latitude: e.latLng.lat().toFixed(6),
+                longitude: e.latLng.lng().toFixed(6)
+            });
+        }
     };
 
     return (
@@ -229,8 +252,8 @@ export default function InfrastructureManagementPage() {
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             className={`p-4 rounded-xl flex items-center gap-3 border ${message.type === 'error'
-                                    ? 'bg-red-500/10 border-red-500/20 text-red-200'
-                                    : 'bg-green-500/10 border-green-500/20 text-green-200'
+                                ? 'bg-red-500/10 border-red-500/20 text-red-200'
+                                : 'bg-green-500/10 border-green-500/20 text-green-200'
                                 }`}
                         >
                             {message.type === 'error' ? <AlertCircle className="w-5 h-5 shrink-0" /> : <CheckCircle2 className="w-5 h-5 shrink-0" />}
@@ -239,16 +262,143 @@ export default function InfrastructureManagementPage() {
                     )}
                 </div>
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pt-2">
+                <div className="flex-1 min-h-0 relative p-6 pt-2">
+                    {/* The Blank Black Box gets replaced by the Map and overlay list */}
+                    <div className="absolute inset-x-6 inset-y-2 rounded-2xl overflow-hidden border border-[#333]">
+                        {isLoaded ? (
+                            <GoogleMap
+                                mapContainerStyle={mapContainerStyle}
+                                zoom={12}
+                                center={
+                                    newInfra.latitude && newInfra.longitude
+                                        ? { lat: parseFloat(newInfra.latitude), lng: parseFloat(newInfra.longitude) }
+                                        : defaultCenter
+                                }
+                                onClick={handleMapClick}
+                                options={{
+                                    styles: [
+                                        { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+                                        { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+                                        { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+                                        {
+                                            featureType: "administrative.locality",
+                                            elementType: "labels.text.fill",
+                                            stylers: [{ color: "#d59563" }],
+                                        },
+                                        {
+                                            featureType: "poi",
+                                            elementType: "labels.text.fill",
+                                            stylers: [{ color: "#d59563" }],
+                                        },
+                                        {
+                                            featureType: "poi.park",
+                                            elementType: "geometry",
+                                            stylers: [{ color: "#263c3f" }],
+                                        },
+                                        {
+                                            featureType: "poi.park",
+                                            elementType: "labels.text.fill",
+                                            stylers: [{ color: "#6b9a76" }],
+                                        },
+                                        {
+                                            featureType: "road",
+                                            elementType: "geometry",
+                                            stylers: [{ color: "#38414e" }],
+                                        },
+                                        {
+                                            featureType: "road",
+                                            elementType: "geometry.stroke",
+                                            stylers: [{ color: "#212a37" }],
+                                        },
+                                        {
+                                            featureType: "road",
+                                            elementType: "labels.text.fill",
+                                            stylers: [{ color: "#9ca5b3" }],
+                                        },
+                                        {
+                                            featureType: "road.highway",
+                                            elementType: "geometry",
+                                            stylers: [{ color: "#746855" }],
+                                        },
+                                        {
+                                            featureType: "road.highway",
+                                            elementType: "geometry.stroke",
+                                            stylers: [{ color: "#1f2835" }],
+                                        },
+                                        {
+                                            featureType: "road.highway",
+                                            elementType: "labels.text.fill",
+                                            stylers: [{ color: "#f3d19c" }],
+                                        },
+                                        {
+                                            featureType: "transit",
+                                            elementType: "geometry",
+                                            stylers: [{ color: "#2f3948" }],
+                                        },
+                                        {
+                                            featureType: "transit.station",
+                                            elementType: "labels.text.fill",
+                                            stylers: [{ color: "#d59563" }],
+                                        },
+                                        {
+                                            featureType: "water",
+                                            elementType: "geometry",
+                                            stylers: [{ color: "#17263c" }],
+                                        },
+                                        {
+                                            featureType: "water",
+                                            elementType: "labels.text.fill",
+                                            stylers: [{ color: "#515c6d" }],
+                                        },
+                                        {
+                                            featureType: "water",
+                                            elementType: "labels.text.stroke",
+                                            stylers: [{ color: "#17263c" }],
+                                        },
+                                    ],
+                                    disableDefaultUI: true,
+                                    zoomControl: true,
+                                }}
+                            >
+                                {filteredInfra.map((node) => (
+                                    <Marker
+                                        key={node.id}
+                                        position={{ lat: Number(node.latitude), lng: Number(node.longitude) }}
+                                        icon={{
+                                            url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
+                                        }}
+                                        title={node.name}
+                                    />
+                                ))}
+                                {newInfra.latitude && newInfra.longitude && (
+                                    <Marker
+                                        position={{ lat: parseFloat(newInfra.latitude), lng: parseFloat(newInfra.longitude) }}
+                                        icon={{
+                                            url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                                        }}
+                                    />
+                                )}
+                            </GoogleMap>
+                        ) : (
+                            <div className="h-full flex flex-col items-center justify-center text-gray-500 bg-[#0a0a0a]">
+                                <RefreshCw className="w-8 h-8 mb-4 animate-spin text-emerald-400" />
+                                <p>Loading map interface...</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Overlaid / Bottom list of assets slightly overlapping or below */}
+                <div className="h-64 border-t border-[#333] bg-[#111] overflow-y-auto custom-scrollbar p-6">
                     {loading ? (
                         <div className="h-full flex flex-col items-center justify-center text-gray-500">
-                            <RefreshCw className="w-8 h-8 mb-4 animate-spin text-emerald-400" />
-                            <p>Scanning infrastructure grid...</p>
+                            <RefreshCw className="w-6 h-6 mb-2 animate-spin text-emerald-400" />
+                            <p className="text-sm">Scanning infrastructure grid...</p>
                         </div>
                     ) : filteredInfra.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-gray-500">
-                            <HardHat className="w-16 h-16 mb-4 opacity-20" />
-                            <p>No infrastructure assets found.</p>
+                            <HardHat className="w-10 h-10 mb-2 opacity-20" />
+                            <p className="text-sm">No infrastructure assets found.</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -267,8 +417,8 @@ export default function InfrastructureManagementPage() {
                                             </div>
                                         </div>
                                         <span className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${node.status === 'Operational' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                                                node.status === 'Proposed' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                                                    'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                            node.status === 'Proposed' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                                'bg-blue-500/10 text-blue-400 border-blue-500/20'
                                             }`}>
                                             {node.status}
                                         </span>

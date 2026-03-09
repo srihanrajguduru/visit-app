@@ -21,10 +21,12 @@ function MetricBar({ label, value, max, unit, color }: { label: string; value: n
     return (
         <div className="mb-3">
             <div className="flex justify-between text-xs mb-1">
-                <span className="text-gray-400">{label}</span>
-                <span className="text-gray-300 font-medium">{value.toFixed(1)} {unit}</span>
+                <span style={{ color: "var(--text-muted)" }}>{label}</span>
+                <span className="font-medium" style={{ color: "var(--text-secondary)" }}>
+                    {value.toFixed(1)} {unit}
+                </span>
             </div>
-            <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--bg-elevated)" }}>
                 <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${pct}%` }}
@@ -55,59 +57,63 @@ export function AreaPanel({ areaName, zone, metrics, score, onClose }: AreaPanel
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h2 className="text-xl font-bold text-white">{areaName}</h2>
-                    {zone && <p className="text-sm text-gray-400">{zone} Zone</p>}
+                    <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>{areaName}</h2>
+                    {zone && <p className="text-sm" style={{ color: "var(--text-muted)" }}>{zone} Zone</p>}
                 </div>
                 <button
                     onClick={onClose}
-                    className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                    style={{
+                        background: "var(--bg-elevated)",
+                        color: "var(--text-muted)",
+                    }}
                 >
                     ✕
                 </button>
             </div>
 
             {/* Score */}
-            <div className="text-center mb-6 py-4 rounded-xl bg-gray-800/50">
+            <div className="text-center mb-6 py-4 rounded-xl" style={{ background: "var(--bg-elevated)" }}>
                 <div className="text-4xl font-bold gradient-text">{score.toFixed(1)}</div>
-                <div className="text-sm text-gray-400 mt-1">Visit Score</div>
+                <div className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Visit Score</div>
             </div>
 
             {/* Sub-scores */}
             <div className="grid grid-cols-3 gap-3 mb-6">
                 {[
-                    { label: "Environment", value: envScore, color: "#22c55e" },
-                    { label: "Infrastructure", value: infraScore, color: "#6366f1" },
-                    { label: "Social", value: socialScore, color: "#eab308" },
+                    { label: "Environment", value: envScore, color: "var(--brand-secondary)" },
+                    { label: "Infrastructure", value: infraScore, color: "var(--brand-primary)" },
+                    { label: "Social", value: socialScore, color: "var(--score-moderate)" },
                 ].map((s) => (
-                    <div key={s.label} className="text-center py-3 rounded-xl bg-gray-800/50">
+                    <div key={s.label} className="text-center py-3 rounded-xl" style={{ background: "var(--bg-elevated)" }}>
                         <div className="text-lg font-bold" style={{ color: s.color }}>
                             {s.value.toFixed(0)}
                         </div>
-                        <div className="text-[10px] text-gray-500 mt-0.5">{s.label}</div>
+                        <div className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>{s.label}</div>
                     </div>
                 ))}
             </div>
 
             {/* Detailed Metrics */}
             <div className="space-y-1">
-                <h3 className="text-sm font-semibold text-gray-300 mb-3">Environmental</h3>
-                <MetricBar label="AQI (PM2.5)" value={metrics.aqi ?? 0} max={500} unit="µg/m³" color="#ef4444" />
-                <MetricBar label="Noise Level" value={metrics.noise ?? 0} max={100} unit="dB" color="#f97316" />
-                <MetricBar label="Flood Risk" value={(metrics.flood_risk ?? 0) * 100} max={100} unit="%" color="#eab308" />
+                <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--text-secondary)" }}>Environmental</h3>
+                <MetricBar label="AQI (PM2.5)" value={metrics.aqi ?? 0} max={500} unit="µg/m³" color="var(--danger)" />
+                <MetricBar label="Noise Level" value={metrics.noise ?? 0} max={100} unit="dB" color="var(--warning)" />
+                <MetricBar label="Flood Risk" value={(metrics.flood_risk ?? 0) * 100} max={100} unit="%" color="var(--score-moderate)" />
 
-                <h3 className="text-sm font-semibold text-gray-300 mt-4 mb-3">Infrastructure</h3>
-                <MetricBar label="Metro Distance" value={(metrics.metro_distance ?? 5000) / 1000} max={10} unit="km" color="#6366f1" />
-                <MetricBar label="Road Quality" value={(metrics.road_quality ?? 0.5) * 100} max={100} unit="%" color="#8b5cf6" />
-                <MetricBar label="Water Supply" value={(metrics.water_supply_score ?? 0.5) * 100} max={100} unit="%" color="#3b82f6" />
-                <MetricBar label="Internet" value={(metrics.internet_score ?? 0.5) * 100} max={100} unit="%" color="#06b6d4" />
+                <h3 className="text-sm font-semibold mt-4 mb-3" style={{ color: "var(--text-secondary)" }}>Infrastructure</h3>
+                <MetricBar label="Metro Distance" value={(metrics.metro_distance ?? 5000) / 1000} max={10} unit="km" color="var(--brand-primary)" />
+                <MetricBar label="Road Quality" value={(metrics.road_quality ?? 0.5) * 100} max={100} unit="%" color="var(--brand-accent)" />
+                <MetricBar label="Water Supply" value={(metrics.water_supply_score ?? 0.5) * 100} max={100} unit="%" color="var(--brand-primary-light)" />
+                <MetricBar label="Internet" value={(metrics.internet_score ?? 0.5) * 100} max={100} unit="%" color="var(--brand-accent-light)" />
 
-                <h3 className="text-sm font-semibold text-gray-300 mt-4 mb-3">Social</h3>
-                <MetricBar label="Safety Score" value={metrics.women_safety_score ?? 50} max={100} unit="" color="#22c55e" />
-                <MetricBar label="Crime Rate" value={metrics.crime_rate ?? 30} max={100} unit="" color="#ef4444" />
-                <MetricBar label="Amenity Score" value={metrics.amenity_score ?? 50} max={100} unit="" color="#a78bfa" />
+                <h3 className="text-sm font-semibold mt-4 mb-3" style={{ color: "var(--text-secondary)" }}>Social</h3>
+                <MetricBar label="Safety Score" value={metrics.women_safety_score ?? 50} max={100} unit="" color="var(--brand-secondary)" />
+                <MetricBar label="Crime Rate" value={metrics.crime_rate ?? 30} max={100} unit="" color="var(--danger)" />
+                <MetricBar label="Amenity Score" value={metrics.amenity_score ?? 50} max={100} unit="" color="var(--brand-accent)" />
             </div>
 
-            <p className="text-[10px] text-gray-600 mt-4 text-center">
+            <p className="text-[10px] mt-4 text-center" style={{ color: "var(--text-muted)" }}>
                 Data version: {metrics.dataset_version ?? "v1.0"}
             </p>
         </motion.div>

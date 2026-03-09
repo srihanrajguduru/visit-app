@@ -2,41 +2,59 @@
 
 import { useEffect, useState } from "react";
 import MobileNavigation from "@/components/mobile/MobileNavigation";
-import { UserCircle, Settings, LogOut, ChevronRight, Bell, Heart, Shield, HelpCircle, Smartphone } from "lucide-react";
+import { UserCircle, Settings, LogOut, ChevronRight, Bell, Heart, Shield, HelpCircle, Smartphone, MessageSquare, Building2, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
+
+const untypedSupabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function MobileProfilePage() {
     const { user, loading, logout } = useAuth();
     const router = useRouter();
     const [savedCount, setSavedCount] = useState<number>(0);
+    const [communityCount, setCommunityCount] = useState<number>(0);
+    const [listingCount, setListingCount] = useState<number>(0);
 
-    // Fetch the total count of saved areas directly via Head for lightweight profile metrics
     useEffect(() => {
-        async function fetchSavedCount() {
+        async function fetchProfileData() {
             if (!user) return;
-            const { count } = await supabase
-                .from("saved_areas")
-                .select("*", { count: 'exact', head: true })
-                .eq("user_id", user.uid);
 
-            if (count !== null) setSavedCount(count);
+            const { count: savedC } = await supabase
+                .from("saved_areas")
+                .select("*", { count: "exact", head: true })
+                .eq("user_id", user.uid);
+            if (savedC !== null) setSavedCount(savedC);
+
+            const { count: commC } = await untypedSupabase
+                .from("community_members")
+                .select("*", { count: "exact", head: true })
+                .eq("user_id", user.uid);
+            setCommunityCount(commC ?? 0);
+
+            const { count: listC } = await untypedSupabase
+                .from("property_listings")
+                .select("*", { count: "exact", head: true })
+                .eq("owner_id", user.uid);
+            setListingCount(listC ?? 0);
         }
 
-        fetchSavedCount();
+        fetchProfileData();
     }, [user]);
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-black flex justify-center items-center">
-                <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+            <div className="min-h-screen flex justify-center items-center" style={{ background: "var(--bg-dark)" }}>
+                <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: "var(--brand-accent)", borderTopColor: "transparent" }} />
             </div>
         );
     }
 
     if (!user) {
-        // Redundant catch, layout should theoretically protect this but added for safe measure
         router.push("/login");
         return null;
     }
@@ -44,111 +62,139 @@ export default function MobileProfilePage() {
     const handleLogout = async () => {
         try {
             await logout();
-            router.push("/login"); // Immediately force redirection
+            router.push("/login");
         } catch (error) {
             console.error("Logout failed", error);
         }
     };
 
+    const stats = [
+        { icon: Heart, label: "Saved Areas", value: savedCount, color: "var(--danger)", onClick: () => router.push("/mobile/saved") },
+        { icon: MessageSquare, label: "Communities", value: communityCount, color: "var(--brand-secondary)", onClick: () => router.push("/mobile/community") },
+        { icon: Building2, label: "Listings", value: listingCount, color: "var(--brand-primary)", onClick: undefined },
+    ];
+
+    const menuItems = [
+        { icon: Bell, title: "Notifications", desc: "Manage alerts and emails" },
+        { icon: Shield, title: "Privacy & Security", desc: "Manage data and sessions" },
+        { icon: HelpCircle, title: "Help & Support", desc: "Contact admin" },
+    ];
+
     return (
-        <div className="min-h-screen bg-black text-white pb-24 font-sans selection:bg-indigo-500/30">
+        <div className="min-h-screen pb-24 font-sans theme-transition" style={{ background: "var(--bg-dark)", color: "var(--text-primary)" }}>
             {/* Header */}
-            <div className="pt-12 pb-6 px-6 sticky top-0 bg-black/80 backdrop-blur-xl z-20 border-b border-white/5">
+            <div
+                className="pt-12 pb-6 px-6 sticky top-0 z-20 backdrop-blur-xl theme-transition"
+                style={{ background: "color-mix(in srgb, var(--bg-dark) 80%, transparent)", borderBottom: "1px solid var(--border)" }}
+            >
                 <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold tracking-tight text-white">Profile</h1>
-                    <button className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors">
-                        <Settings className="w-5 h-5 text-gray-300" />
+                    <h1 className="text-2xl font-bold tracking-tight gradient-text">Profile</h1>
+                    <button className="p-2 rounded-full transition-colors" style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}>
+                        <Settings className="w-5 h-5" />
                     </button>
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-xl font-bold overflow-hidden shadow-lg shadow-indigo-500/20">
+                    <div
+                        className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold overflow-hidden"
+                        style={{
+                            background: "linear-gradient(135deg, var(--brand-primary), var(--brand-accent))",
+                            boxShadow: "var(--glow-primary)",
+                        }}
+                    >
                         {user.photoURL ? (
                             <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" />
                         ) : (
-                            user.email?.charAt(0).toUpperCase() || "?"
+                            <span className="text-white">{user.email?.charAt(0).toUpperCase() || "?"}</span>
                         )}
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-white">{user.displayName || "Explorer"}</h2>
-                        <p className="text-sm text-gray-400">{user.email}</p>
+                        <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>{user.displayName || "Explorer"}</h2>
+                        <p className="text-sm" style={{ color: "var(--text-muted)" }}>{user.email}</p>
                         <div className="flex items-center gap-1.5 mt-1">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[10px] font-medium text-emerald-400 tracking-wider uppercase">User Account</span>
+                            <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--brand-secondary)" }} />
+                            <span className="text-[10px] font-medium tracking-wider uppercase" style={{ color: "var(--brand-secondary)" }}>User Account</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Menu List */}
             <div className="p-6 space-y-6">
-
-                {/* Stats Row */}
-                <div className="grid grid-cols-2 gap-4">
-                    <div
-                        onClick={() => router.push('/mobile/saved')}
-                        className="bg-[#0f0f11] border border-white/5 rounded-2xl p-4 flex flex-col gap-1 active:scale-95 transition-transform"
-                    >
-                        <Heart className="w-5 h-5 text-pink-500 mb-1" />
-                        <span className="text-2xl font-black">{savedCount}</span>
-                        <span className="text-xs text-gray-400 font-medium">Saved Areas</span>
-                    </div>
-                    <div className="bg-[#0f0f11] border border-white/5 rounded-2xl p-4 flex flex-col gap-1">
-                        <UserCircle className="w-5 h-5 text-blue-500 mb-1" />
-                        <span className="text-2xl font-black">
-                            {new Date(user.metadata.creationTime || Date.now()).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
-                        </span>
-                        <span className="text-xs text-gray-400 font-medium">Joined Date</span>
-                    </div>
+                {/* Stats Grid */}
+                <div className="grid grid-cols-3 gap-3">
+                    {stats.map((stat) => {
+                        const Icon = stat.icon;
+                        return (
+                            <button
+                                key={stat.label}
+                                onClick={stat.onClick}
+                                className="rounded-2xl p-4 flex flex-col gap-1 active:scale-95 transition-transform theme-transition"
+                                style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+                            >
+                                <Icon className="w-5 h-5 mb-1" style={{ color: stat.color }} />
+                                <span className="text-2xl font-black" style={{ color: "var(--text-primary)" }}>{stat.value}</span>
+                                <span className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>{stat.label}</span>
+                            </button>
+                        );
+                    })}
                 </div>
 
-                {/* Account Settings Menu */}
-                <div className="bg-[#0f0f11] border border-white/5 rounded-2xl overflow-hidden">
-                    <div className="px-5 py-4 flex items-center gap-4 border-b border-white/5 bg-white/[0.02]">
-                        <Bell className="w-5 h-5 text-gray-400" />
-                        <div className="flex-1">
-                            <div className="text-sm font-semibold text-white">Notifications</div>
-                            <div className="text-xs text-gray-500">Manage alerts and emails</div>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-gray-600" />
+                {/* Joined Date */}
+                <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
+                    <UserCircle className="w-5 h-5" style={{ color: "var(--brand-accent)" }} />
+                    <div className="flex-1">
+                        <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>Member since</span>
                     </div>
-                    <div className="px-5 py-4 flex items-center gap-4 border-b border-white/5 bg-white/[0.02]">
-                        <Shield className="w-5 h-5 text-gray-400" />
-                        <div className="flex-1">
-                            <div className="text-sm font-semibold text-white">Privacy & Security</div>
-                            <div className="text-xs text-gray-500">Manage data and sessions</div>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-gray-600" />
-                    </div>
-                    <div className="px-5 py-4 flex items-center gap-4 bg-white/[0.02]">
-                        <HelpCircle className="w-5 h-5 text-gray-400" />
-                        <div className="flex-1">
-                            <div className="text-sm font-semibold text-white">Help & Support</div>
-                            <div className="text-xs text-gray-500">Contact admin</div>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-gray-600" />
-                    </div>
+                    <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+                        {new Date(user.metadata.creationTime || Date.now()).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+                    </span>
                 </div>
 
-                {/* App Metadata */}
-                <div className="flex items-center justify-between px-2 opacity-50 text-xs text-gray-500 font-medium">
+                {/* Settings Menu */}
+                <div className="rounded-2xl overflow-hidden" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
+                    {menuItems.map((item, index) => {
+                        const Icon = item.icon;
+                        return (
+                            <div
+                                key={item.title}
+                                className="px-5 py-4 flex items-center gap-4 theme-transition"
+                                style={{ borderBottom: index < menuItems.length - 1 ? "1px solid var(--border)" : "none" }}
+                            >
+                                <Icon className="w-5 h-5" style={{ color: "var(--text-muted)" }} />
+                                <div className="flex-1">
+                                    <div className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{item.title}</div>
+                                    <div className="text-xs" style={{ color: "var(--text-muted)" }}>{item.desc}</div>
+                                </div>
+                                <ChevronRight className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* App Version */}
+                <div className="flex items-center justify-between px-2 text-xs" style={{ color: "var(--text-muted)", opacity: 0.6 }}>
                     <div className="flex items-center gap-1.5">
                         <Smartphone className="w-3.5 h-3.5" />
-                        Visit Score Engine
+                        Vi-SiT Platform
                     </div>
-                    <span>v1.0.0</span>
+                    <span>v2.0.0</span>
                 </div>
 
+                {/* Logout */}
                 <button
                     onClick={handleLogout}
-                    className="w-full py-4 mt-4 bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/30 text-red-500 font-bold rounded-2xl transition-colors border border-red-500/20 shadow-lg shadow-red-500/5 flex items-center justify-center gap-2"
+                    className="w-full py-4 mt-2 font-bold rounded-2xl transition-colors flex items-center justify-center gap-2"
+                    style={{
+                        background: "rgba(214, 76, 76, 0.1)",
+                        color: "var(--danger)",
+                        border: "1px solid rgba(214, 76, 76, 0.2)",
+                    }}
                 >
                     <LogOut className="w-5 h-5" />
                     Logout
                 </button>
             </div>
 
-            {/* Mobile Navigation */}
             <div className="fixed bottom-0 left-0 right-0 z-50">
                 <MobileNavigation />
             </div>

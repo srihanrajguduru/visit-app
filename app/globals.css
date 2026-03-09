@@ -1,57 +1,163 @@
 @import "tailwindcss";
 
+/* ============================================
+   Vi-SiT Design System — Dark/Light Mode
+   ============================================ */
+
+/* ---- Dark Mode (Default) ---- */
+[data-theme="dark"],
 :root {
-  --color-primary: #6366f1;
-  --color-primary-light: #818cf8;
-  --color-primary-dark: #4f46e5;
-  --color-accent: #8b5cf6;
-  --color-success: #22c55e;
-  --color-warning: #eab308;
-  --color-danger: #ef4444;
-  --color-bg-dark: #030712;
-  --color-bg-card: rgba(17, 24, 39, 0.8);
-  --color-border: rgba(75, 85, 99, 0.4);
-  --glow-primary: 0 0 20px rgba(99, 102, 241, 0.3);
-  --glow-accent: 0 0 20px rgba(139, 92, 246, 0.3);
+  --brand-primary: #0D5C8A;
+  --brand-primary-light: #1A7AB5;
+  --brand-secondary: #418B46;
+  --brand-secondary-light: #59A85F;
+  --brand-accent: #2BA3D4;
+  --brand-accent-light: #4FB8E0;
+
+  --bg-dark: #071017;
+  --bg-card: rgba(13, 28, 43, 0.8);
+  --bg-surface: #0B1A26;
+  --bg-elevated: #0F2233;
+  --bg-hover: #132D42;
+
+  --text-primary: #E2EAF2;
+  --text-secondary: #B4C7D6;
+  --text-muted: #7B93A8;
+  --text-inverse: #071017;
+
+  --border: rgba(43, 163, 212, 0.2);
+  --border-strong: rgba(43, 163, 212, 0.35);
+
+  --danger: #D64C4C;
+  --danger-light: #E06666;
+  --warning: #D4A72B;
+  --success: #418B46;
+
+  --glow-primary: 0 0 20px rgba(13, 92, 138, 0.3);
+  --glow-accent: 0 0 20px rgba(43, 163, 212, 0.25);
+  --glow-success: 0 0 20px rgba(65, 139, 70, 0.3);
+
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+  --score-excellent: #418B46;
+  --score-good: #59A85F;
+  --score-moderate: #D4A72B;
+  --score-low: #D64C4C;
 }
+
+/* ---- Light Mode ---- */
+[data-theme="light"] {
+  --brand-primary: #0D5C8A;
+  --brand-primary-light: #0A4D74;
+  --brand-secondary: #418B46;
+  --brand-secondary-light: #357A3A;
+  --brand-accent: #1E8BB8;
+  --brand-accent-light: #1779A3;
+
+  --bg-dark: #F4F7FA;
+  --bg-card: rgba(255, 255, 255, 0.92);
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F0F4F8;
+  --bg-hover: #E6ECF2;
+
+  --text-primary: #0B1A26;
+  --text-secondary: #2E4A5F;
+  --text-muted: #5A7086;
+  --text-inverse: #F4F7FA;
+
+  --border: rgba(13, 92, 138, 0.15);
+  --border-strong: rgba(13, 92, 138, 0.28);
+
+  --danger: #D64C4C;
+  --danger-light: #C43E3E;
+  --warning: #B8901E;
+  --success: #357A3A;
+
+  --glow-primary: 0 0 15px rgba(13, 92, 138, 0.12);
+  --glow-accent: 0 0 15px rgba(30, 139, 184, 0.12);
+  --glow-success: 0 0 15px rgba(65, 139, 70, 0.12);
+
+  --shadow-card: 0 2px 12px rgba(11, 26, 38, 0.08);
+  --shadow-elevated: 0 4px 20px rgba(11, 26, 38, 0.12);
+
+  --score-excellent: #357A3A;
+  --score-good: #418B46;
+  --score-moderate: #B8901E;
+  --score-low: #D64C4C;
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
+  scrollbar-color: var(--brand-primary) transparent;
 }
 
 body {
-  background: var(--color-bg-dark);
+  background: var(--bg-dark);
+  color: var(--text-primary);
   min-height: 100vh;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Glassmorphism card */
+/* ============================================
+   Glassmorphism Card
+   ============================================ */
 .glass-card {
-  background: rgba(17, 24, 39, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(75, 85, 99, 0.3);
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
   border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Gradient text */
+.glass-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-elevated);
+}
+
+/* ============================================
+   Text Utilities
+   ============================================ */
 .gradient-text {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa);
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent), var(--brand-secondary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Score gauge glow */
-.score-glow-green { box-shadow: 0 0 30px rgba(34, 197, 94, 0.4); }
-.score-glow-yellow { box-shadow: 0 0 30px rgba(234, 179, 8, 0.4); }
-.score-glow-red { box-shadow: 0 0 30px rgba(239, 68, 68, 0.4); }
+.text-brand { color: var(--brand-primary); }
+.text-accent { color: var(--brand-accent); }
+.text-success { color: var(--brand-secondary); }
+.text-danger { color: var(--danger); }
+.text-muted { color: var(--text-muted); }
+.text-secondary { color: var(--text-secondary); }
 
-/* Animated gradient background */
+/* ============================================
+   Score Glows
+   ============================================ */
+.score-glow-green { box-shadow: 0 0 30px rgba(65, 139, 70, 0.4); }
+.score-glow-yellow { box-shadow: 0 0 30px rgba(212, 167, 43, 0.4); }
+.score-glow-red { box-shadow: 0 0 30px rgba(214, 76, 76, 0.4); }
+
+/* ============================================
+   Animated Gradient Background
+   ============================================ */
 .animated-gradient {
-  background: linear-gradient(-45deg, #030712, #1e1b4b, #0c0a20, #1a0a2e);
+  background: linear-gradient(-45deg, var(--bg-dark), #0D2236, #071A2B, #0A1F30);
   background-size: 400% 400%;
   animation: gradientShift 12s ease infinite;
+}
+
+[data-theme="light"] .animated-gradient {
+  background: linear-gradient(-45deg, #F4F7FA, #E0ECF4, #D6E8F4, #E8F0F6);
+  background-size: 400% 400%;
 }
 
 @keyframes gradientShift {
@@ -60,7 +166,9 @@ body {
   100% { background-position: 0% 50%; }
 }
 
-/* Floating particles */
+/* ============================================
+   Floating Particles
+   ============================================ */
 @keyframes float {
   0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
   50% { transform: translateY(-20px) rotate(5deg); opacity: 0.6; }
@@ -70,7 +178,9 @@ body {
   animation: float 6s ease-in-out infinite;
 }
 
-/* Pulse animation for score */
+/* ============================================
+   Score Pulse Animation
+   ============================================ */
 @keyframes scorePulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.02); }
@@ -80,12 +190,16 @@ body {
   animation: scorePulse 3s ease-in-out infinite;
 }
 
-/* Map overlay transitions */
+/* ============================================
+   Map Panel Transitions
+   ============================================ */
 .map-panel {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Button glow effect */
+/* ============================================
+   Button Glow Effect
+   ============================================ */
 .btn-glow {
   position: relative;
   overflow: hidden;
@@ -99,7 +213,7 @@ body {
   left: -2px;
   right: -2px;
   bottom: -2px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6, #6366f1);
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent), var(--brand-primary));
   border-radius: inherit;
   z-index: -1;
   opacity: 0;
@@ -113,4 +227,36 @@ body {
 .btn-glow:hover {
   box-shadow: var(--glow-primary);
   transform: translateY(-1px);
+}
+
+/* ============================================
+   Custom Scrollbar
+   ============================================ */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--brand-primary);
+  border-radius: 3px;
+  opacity: 0.5;
+}
+
+/* ============================================
+   Surface Utilities
+   ============================================ */
+.bg-surface { background: var(--bg-surface); }
+.bg-elevated { background: var(--bg-elevated); }
+.border-theme { border-color: var(--border); }
+.border-theme-strong { border-color: var(--border-strong); }
+
+/* ============================================
+   Transition Utilities
+   ============================================ */
+.theme-transition {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
