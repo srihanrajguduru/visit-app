@@ -1,44 +1,58 @@
-import { supabase } from "@/lib/supabase";
+/**
+ * --------------------------------------------------------
+ * File: services/scores.ts
+ * Purpose: Visit Score and metrics service.
+ * Responsibilities: Retrieves environmental/infrastructure/social metrics, fetches current scores and history, and handles display-level sub-score math.
+ * Author: Antigravity Maintainer
+ * --------------------------------------------------------
+ */
+
+import { prisma } from "@/lib/prisma";
 import type { AreaMetrics, VisitScore, VisitScoreHistory } from "@/types/database";
 
+/**
+ * Retrieves the latest metrics record for a given area.
+ * 
+ * @param areaId ID of the target area
+ * @returns AreaMetrics record or null
+ */
 export async function getAreaMetrics(areaId: string): Promise<AreaMetrics | null> {
-    const { data, error } = await supabase
-        .from("area_metrics")
-        .select("*")
-        .eq("area_id", areaId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
-
-    if (error) return null;
-    return data;
+    const metrics = await prisma.areaMetrics.findFirst({
+        where: { areaId },
+        orderBy: { createdAt: "desc" },
+    });
+    return metrics as unknown as AreaMetrics | null;
 }
 
+/**
+ * Retrieves the latest calculated Visit Score for a given area.
+ * 
+ * @param areaId ID of the target area
+ * @returns VisitScore record or null
+ */
 export async function getVisitScore(areaId: string): Promise<VisitScore | null> {
-    const { data, error } = await supabase
-        .from("visit_scores")
-        .select("*")
-        .eq("area_id", areaId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
-
-    if (error) return null;
-    return data;
+    const score = await prisma.visitScore.findFirst({
+        where: { areaId },
+        orderBy: { createdAt: "desc" },
+    });
+    return score as unknown as VisitScore | null;
 }
 
+/**
+ * Retrieves up to 20 historical score records for a given area.
+ * 
+ * @param areaId ID of the target area
+ * @returns Array of VisitScoreHistory records
+ */
 export async function getScoreHistory(
     areaId: string
 ): Promise<VisitScoreHistory[]> {
-    const { data, error } = await supabase
-        .from("visit_score_history")
-        .select("*")
-        .eq("area_id", areaId)
-        .order("created_at", { ascending: false })
-        .limit(20);
-
-    if (error) return [];
-    return data ?? [];
+    const history = await prisma.visitScoreHistory.findMany({
+        where: { areaId },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+    });
+    return history as unknown as VisitScoreHistory[];
 }
 
 /**
@@ -82,16 +96,15 @@ export function calculateSocialDisplay(metrics: AreaMetrics): number {
 
 /**
  * Subscribe to realtime Visit Score changes.
+ * Mocked for local SQLite database to prevent frontend channel subscription exceptions.
  */
 export function subscribeToScoreUpdates(
     callback: (payload: VisitScore) => void
 ) {
-    return supabase
-        .channel("visit-scores-changes")
-        .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "visit_scores" },
-            (payload) => callback(payload.new as VisitScore)
-        )
-        .subscribe();
+    // Return mock subscription reference
+    return {
+        unsubscribe: () => {
+            // Noop
+        }
+    };
 }

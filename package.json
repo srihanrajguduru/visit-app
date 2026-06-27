@@ -1,21 +1,49 @@
 {
   "name": "visit-app",
-  "version": "0.1.0",
-  "private": true,
+  "version": "1.0.0",
+  "description": "Vi-SiT - Real-Time Neighborhood Livability Score Platform for Hyderabad.",
+  "keywords": [
+    "nextjs",
+    "react",
+    "sqlite",
+    "prisma",
+    "jwt-auth",
+    "hyderabad",
+    "livability-score",
+    "environmental-data",
+    "realtime",
+    "map"
+  ],
+  "author": "srihanrajguduru",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/srihanrajguduru/visit-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/srihanrajguduru/visit-app/issues"
+  },
+  "homepage": "https://github.com/srihanrajguduru/visit-app#readme",
+  "private": false,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.3",
     "@react-google-maps/api": "^2.20.8",
-    "@supabase/supabase-js": "^2.97.0",
+    "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "firebase": "^12.9.0",
-    "firebase-admin": "^13.7.0",
     "framer-motion": "^12.34.3",
+    "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.575.0",
     "next": "16.1.6",
     "react": "19.2.3",
@@ -27,12 +55,15 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }

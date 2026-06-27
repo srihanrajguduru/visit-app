@@ -1,5 +1,14 @@
-import { supabase } from "@/lib/supabase";
-import { Area } from "@/types/database";
+/**
+ * --------------------------------------------------------
+ * File: services/areaService.ts
+ * Purpose: Area-based metrics retrieval service.
+ * Responsibilities: Maps coordinates to nearest monitoring areas, queries local SQLite database via Prisma for metrics, calculates display sub-scores, and generates pros/cons summaries.
+ * Author: Antigravity Maintainer
+ * --------------------------------------------------------
+ */
+
+import { prisma } from "@/lib/prisma";
+import type { Area } from "@/types/database";
 import {
     calculateEnvironmentalDisplay,
     calculateInfrastructureDisplay,
@@ -19,13 +28,12 @@ function getHaversineDistance(lat1: number, lon1: number, lat2: number, lon2: nu
 
 export async function getAreaByCoordinates(latitude: number, longitude: number) {
     // 1. Fetch available areas
-    const { data, error } = await supabase.from('areas').select('*');
-    if (error || !data || data.length === 0) {
+    const areas = await prisma.area.findMany();
+    if (areas.length === 0) {
         throw new Error("No areas found");
     }
-    const areas = data as Area[];
 
-    // 2. Find nearest area using haversine distance exactly like desktop calculations
+    // 2. Find nearest area using haversine distance
     let nearestArea = areas[0];
     let minDistance = Infinity;
 
@@ -40,13 +48,10 @@ export async function getAreaByCoordinates(latitude: number, longitude: number) 
     }
 
     // 3. Get metrics for this nearest area, strictly querying the area_metrics table
-    const { data: metricsData } = await supabase
-        .from('area_metrics')
-        .select('aqi, noise, flood_risk, metro_distance, road_quality, internet_score, crime_rate, women_safety_score, amenity_score, water_supply_score')
-        .eq('area_id', nearestArea.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single() as any;
+    const metricsData = await prisma.areaMetrics.findFirst({
+        where: { areaId: nearestArea.id },
+        orderBy: { createdAt: "desc" },
+    });
 
     // 4. Process scores and generate pros/cons summary
     let environmental_score = null;
@@ -55,33 +60,51 @@ export async function getAreaByCoordinates(latitude: number, longitude: number) 
     const pros: string[] = [];
     const cons: string[] = [];
 
-    if (metricsData) {
-        environmental_score = calculateEnvironmentalDisplay(metricsData);
-        infrastructure_score = calculateInfrastructureDisplay(metricsData);
-        social_score = calculateSocialDisplay(metricsData);
+    // Map Prisma camelCase back to snake_case structure expected by display functions
+    const formattedMetrics: any = metricsData ? {
+        id: metricsData.id,
+        area_id: metricsData.areaId,
+        dataset_version: metricsData.datasetVersion,
+        aqi: metricsData.aqi,
+        noise: metricsData.noise,
+        flood_risk: metricsData.floodRisk,
+        metro_distance: metricsData.metroDistance,
+        road_quality: metricsData.roadQuality,
+        water_supply_score: metricsData.waterSupplyScore,
+        internet_score: metricsData.internetScore,
+        crime_rate: metricsData.crimeRate,
+        women_safety_score: metricsData.womenSafetyScore,
+        amenity_score: metricsData.amenityScore,
+        created_at: metricsData.createdAt.toISOString(),
+    } : null;
 
-        if (metricsData.aqi && metricsData.aqi < 50) pros.push("Excellent Air Quality");
-        else if (metricsData.aqi && metricsData.aqi > 150) cons.push("Poor Air Quality");
+    if (formattedMetrics) {
+        environmental_score = calculateEnvironmentalDisplay(formattedMetrics);
+        infrastructure_score = calculateInfrastructureDisplay(formattedMetrics);
+        social_score = calculateSocialDisplay(formattedMetrics);
 
-        if (metricsData.noise !== null && metricsData.noise < 60) pros.push("Quiet Neighborhood");
-        else if (metricsData.noise !== null && metricsData.noise > 75) cons.push("High Noise Pollution");
+        if (formattedMetrics.aqi && formattedMetrics.aqi < 50) pros.push("Excellent Air Quality");
+        else if (formattedMetrics.aqi && formattedMetrics.aqi > 150) cons.push("Poor Air Quality");
 
-        if (metricsData.metro_distance !== null && metricsData.metro_distance < 2) pros.push("Close to Metro Transit");
-        else if (metricsData.metro_distance !== null) cons.push("Far from Metro Transit");
+        if (formattedMetrics.noise !== null && formattedMetrics.noise < 60) pros.push("Quiet Neighborhood");
+        else if (formattedMetrics.noise !== null && formattedMetrics.noise > 75) cons.push("High Noise Pollution");
 
-        if (metricsData.amenity_score !== null && metricsData.amenity_score > 80) pros.push("Great Amenities Nearby");
-        else if (metricsData.amenity_score !== null && metricsData.amenity_score < 40) cons.push("Lacking Amenities");
+        if (formattedMetrics.metro_distance !== null && formattedMetrics.metro_distance < 2) pros.push("Close to Metro Transit");
+        else if (formattedMetrics.metro_distance !== null) cons.push("Far from Metro Transit");
 
-        if (metricsData.flood_risk !== null && metricsData.flood_risk < 3) pros.push("Low Flood Risk");
-        else if (metricsData.flood_risk !== null && metricsData.flood_risk >= 7) cons.push("High Flood Risk");
+        if (formattedMetrics.amenity_score !== null && formattedMetrics.amenity_score > 80) pros.push("Great Amenities Nearby");
+        else if (formattedMetrics.amenity_score !== null && formattedMetrics.amenity_score < 40) cons.push("Lacking Amenities");
+
+        if (formattedMetrics.flood_risk !== null && formattedMetrics.flood_risk < 3) pros.push("Low Flood Risk");
+        else if (formattedMetrics.flood_risk !== null && formattedMetrics.flood_risk >= 7) cons.push("High Flood Risk");
     }
 
-    // Output strictly matching the requested spec: name, current_visit_score, metrics
+    // Output matching the expected spec: name, current_visit_score, metrics
     return {
         id: nearestArea.id,
         name: nearestArea.name,
-        current_visit_score: nearestArea.current_visit_score,
-        metrics: metricsData || null,
+        current_visit_score: nearestArea.currentVisitScore,
+        metrics: formattedMetrics || null,
         environmental_score,
         infrastructure_score,
         social_score,

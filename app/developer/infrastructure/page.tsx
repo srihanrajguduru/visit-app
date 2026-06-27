@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { HardHat, Search, RefreshCw, AlertCircle, Plus, Save, MapPin, CheckCircle2, Train, Wifi, Route } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 import { GoogleMap, useLoadScript, Marker } from "@react-google-maps/api";
 
 const mapContainerStyle = {
@@ -14,10 +14,7 @@ const mapContainerStyle = {
 // Default to Hyderabad
 const defaultCenter = { lat: 17.3850, lng: 78.4867 };
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+
 
 export default function InfrastructureManagementPage() {
     const [infrastructures, setInfrastructures] = useState<any[]>([]);

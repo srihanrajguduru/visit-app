@@ -1,35 +1,38 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+/**
+ * --------------------------------------------------------
+ * File: app/api/process-dataset/route.ts
+ * Purpose: Dataset ingestion and processing route.
+ * Responsibilities: Parses uploaded CSV/Excel environmental records, fuzzy matches areas by name in SQLite, pushes updated metrics, and triggers score updates.
+ * Author: Antigravity Maintainer
+ * --------------------------------------------------------
+ */
 
-// Supabase Admin client created dynamically per request
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
     try {
-        const supabaseAdmin = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
-        const { datasetId, records } = await req.json();
+        const { records } = await req.json();
 
         if (!records || !Array.isArray(records)) {
             return NextResponse.json({ error: "Invalid records payload" }, { status: 400 });
         }
 
-        // Process each record
         const updatedAreaIds = new Set<string>();
 
         for (const record of records) {
-            // Find area by name (fuzzy match or exact match depending on data)
-            // For the prototype, we assume the excel file has an 'Area' or 'Location' column
+            // Find area by name (fuzzy match)
             const areaName = record.Area || record.Location || record.name || record.Station;
             if (!areaName) continue;
 
-            const { data: area } = await supabaseAdmin
-                .from("areas")
-                .select("id")
-                .ilike("name", `%${areaName}%`)
-                .limit(1)
-                .single();
+            const area = await prisma.area.findFirst({
+                where: {
+                    name: {
+                        contains: areaName,
+                    },
+                },
+                select: { id: true },
+            });
 
             if (!area) continue;
 
@@ -38,33 +41,41 @@ export async function POST(req: Request) {
 
             // AQI mappings
             if (record.AQI) updates.aqi = Number(record.AQI);
-            if (record.PM25 || record["PM2.5 in        µg/m3"]) updates.aqi = Number(record.PM25 || record["PM2.5 in        µg/m3"]);
+            if (record.PM25 || record["PM2.5 in        µg/m3"]) {
+                updates.aqi = Number(record.PM25 || record["PM2.5 in        µg/m3"]);
+            }
 
             // Noise mappings
-            if (record.Noise || record["Noise Level"]) updates.noise = Number(record.Noise || record["Noise Level"]);
+            if (record.Noise || record["Noise Level"]) {
+                updates.noise = Number(record.Noise || record["Noise Level"]);
+            }
 
             // Social/Crime mappings
-            if (record["Crime Rate"]) updates.crime_rate = Number(record["Crime Rate"]);
-            if (record.Safety) updates.women_safety_score = Number(record.Safety);
+            if (record["Crime Rate"]) updates.crimeRate = Number(record["Crime Rate"]);
+            if (record.Safety) updates.womenSafetyScore = Number(record.Safety);
 
             // Infrastructure
-            if (record["Road Quality"]) updates.road_quality = Number(record["Road Quality"]) / 100;
+            if (record["Road Quality"]) updates.roadQuality = Number(record["Road Quality"]) / 100;
 
             if (Object.keys(updates).length > 0) {
                 // Fetch current metrics to merge
-                const { data: current } = await supabaseAdmin
-                    .from("area_metrics")
-                    .select("*")
-                    .eq("area_id", area.id)
-                    .order("created_at", { ascending: false })
-                    .limit(1)
-                    .single();
+                const current = await prisma.areaMetrics.findFirst({
+                    where: { areaId: area.id },
+                    orderBy: { createdAt: "desc" },
+                });
 
-                const newMetrics = current ? { ...current, ...updates } : { area_id: area.id, ...updates };
-                delete newMetrics.id; // remove id so it inserts new row
-                delete newMetrics.created_at;
+                // Merge and clean up fields for new insertion
+                const newMetrics = current 
+                    ? { ...current, ...updates } 
+                    : { areaId: area.id, ...updates };
 
-                await supabaseAdmin.from("area_metrics").insert(newMetrics);
+                // Strip primary key and timestamps so it creates a new record
+                delete newMetrics.id;
+                delete newMetrics.createdAt;
+
+                await prisma.areaMetrics.create({
+                    data: newMetrics,
+                });
                 updatedAreaIds.add(area.id);
             }
         }

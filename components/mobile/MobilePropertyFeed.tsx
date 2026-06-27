@@ -1,13 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bed, Bath, Maximize2, Shield, Eye, Bookmark, MapPin, Building2, ChevronDown } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 import type { PropertyListing } from "@/types/database";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+
 
 export default function MobilePropertyFeed({ areaId }: { areaId: string }) {
     const [listings, setListings] = useState<PropertyListing[]>([]);

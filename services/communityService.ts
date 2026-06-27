@@ -1,23 +1,57 @@
-import { createClient } from "@supabase/supabase-js";
+/**
+ * --------------------------------------------------------
+ * File: services/communityService.ts
+ * Purpose: Community posts and moderation service.
+ * Responsibilities: Handles fetching posts, adding comments, joining/leaving neighborhood communities, membership verification, and post deletion.
+ * Author: Antigravity Maintainer
+ * --------------------------------------------------------
+ */
+
+import { prisma } from "@/lib/prisma";
 import type { CommunityPost, CommunityComment, CommunityMember } from "@/types/database";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+/**
+ * Format helpers to map camelCase Prisma outputs back to the snake_case interfaces expected by client pages.
+ */
+function formatPost(post: any): CommunityPost {
+    return {
+        id: post.id,
+        area_id: post.areaId,
+        user_id: post.userId,
+        content: post.content,
+        created_at: post.createdAt instanceof Date ? post.createdAt.toISOString() : post.createdAt,
+    } as unknown as CommunityPost;
+}
+
+function formatComment(comment: any): CommunityComment {
+    return {
+        id: comment.id,
+        post_id: comment.postId,
+        user_id: comment.userId,
+        content: comment.content,
+        created_at: comment.createdAt instanceof Date ? comment.createdAt.toISOString() : comment.createdAt,
+    } as unknown as CommunityComment;
+}
+
+function formatMember(member: any): CommunityMember {
+    return {
+        id: member.id,
+        area_id: member.areaId,
+        user_id: member.userId,
+        membership_type: member.membershipType,
+        joined_at: member.joinedAt instanceof Date ? member.joinedAt.toISOString() : member.joinedAt,
+    } as unknown as CommunityMember;
+}
 
 /**
  * Get all community posts for an area, ordered newest first.
  */
 export async function getCommunityPosts(areaId: string): Promise<CommunityPost[]> {
-    const { data, error } = await supabase
-        .from("community_posts")
-        .select("*")
-        .eq("area_id", areaId)
-        .order("created_at", { ascending: false });
-
-    if (error) return [];
-    return (data as CommunityPost[]) ?? [];
+    const posts = await prisma.communityPost.findMany({
+        where: { areaId },
+        orderBy: { createdAt: "desc" },
+    });
+    return posts.map((p) => formatPost(p)) ?? [];
 }
 
 /**
@@ -28,28 +62,25 @@ export async function createPost(
     userId: string,
     content: string
 ): Promise<CommunityPost> {
-    const { data, error } = await supabase
-        .from("community_posts")
-        .insert({ area_id: areaId, user_id: userId, content } as any)
-        .select()
-        .single();
-
-    if (error) return {} as CommunityPost;
-    return data as CommunityPost;
+    const created = await prisma.communityPost.create({
+        data: {
+            areaId,
+            userId,
+            content,
+        },
+    });
+    return formatPost(created);
 }
 
 /**
  * Get all comments for a specific post.
  */
 export async function getComments(postId: string): Promise<CommunityComment[]> {
-    const { data, error } = await supabase
-        .from("community_comments")
-        .select("*")
-        .eq("post_id", postId)
-        .order("created_at", { ascending: true });
-
-    if (error) return [];
-    return (data as CommunityComment[]) ?? [];
+    const comments = await prisma.communityComment.findMany({
+        where: { postId },
+        orderBy: { createdAt: "asc" },
+    });
+    return comments.map((c) => formatComment(c)) ?? [];
 }
 
 /**
@@ -60,14 +91,14 @@ export async function addComment(
     userId: string,
     content: string
 ): Promise<CommunityComment> {
-    const { data, error } = await supabase
-        .from("community_comments")
-        .insert({ post_id: postId, user_id: userId, content } as any)
-        .select()
-        .single();
-
-    if (error) return {} as CommunityComment;
-    return data as CommunityComment;
+    const created = await prisma.communityComment.create({
+        data: {
+            postId,
+            userId,
+            content,
+        },
+    });
+    return formatComment(created);
 }
 
 /**
@@ -78,31 +109,42 @@ export async function joinCommunity(
     userId: string,
     membershipType: string = "resident"
 ): Promise<CommunityMember> {
-    const { data, error } = await supabase
-        .from("community_members")
-        .insert({
-            area_id: areaId,
-            user_id: userId,
-            membership_type: membershipType,
-        } as any)
-        .select()
-        .single();
-
-    if (error) return {} as CommunityMember;
-    return data as CommunityMember;
+    // Upsert to handle joining/re-joining gracefully
+    const created = await prisma.communityMember.upsert({
+        where: {
+            areaId_userId: {
+                areaId,
+                userId,
+            },
+        },
+        update: {
+            membershipType,
+        },
+        create: {
+            areaId,
+            userId,
+            membershipType,
+        },
+    });
+    return formatMember(created);
 }
 
 /**
  * Leave a community.
  */
 export async function leaveCommunity(areaId: string, userId: string): Promise<void> {
-    const { error } = await supabase
-        .from("community_members")
-        .delete()
-        .eq("area_id", areaId)
-        .eq("user_id", userId);
-
-    if (error) return;
+    try {
+        await prisma.communityMember.delete({
+            where: {
+                areaId_userId: {
+                    areaId,
+                    userId,
+                },
+            },
+        });
+    } catch {
+        // Safe catch if membership didn't exist
+    }
 }
 
 /**
@@ -112,89 +154,66 @@ export async function checkMembership(
     areaId: string,
     userId: string
 ): Promise<CommunityMember | null> {
-    const { data, error } = await supabase
-        .from("community_members")
-        .select("*")
-        .eq("area_id", areaId)
-        .eq("user_id", userId)
-        .maybeSingle();
-
-    if (error) return null;
-    return data as CommunityMember | null;
+    const member = await prisma.communityMember.findUnique({
+        where: {
+            areaId_userId: {
+                areaId,
+                userId,
+            },
+        },
+    });
+    return member ? formatMember(member) : null;
 }
 
 /**
  * Get all members of a community.
  */
 export async function getCommunityMembers(areaId: string): Promise<CommunityMember[]> {
-    const { data, error } = await supabase
-        .from("community_members")
-        .select("*")
-        .eq("area_id", areaId)
-        .order("joined_at", { ascending: false });
-
-    if (error) return [];
-    return (data as CommunityMember[]) ?? [];
+    const members = await prisma.communityMember.findMany({
+        where: { areaId },
+        orderBy: { joinedAt: "desc" },
+    });
+    return members.map((m) => formatMember(m)) ?? [];
 }
 
 /**
  * Get the count of members in a community.
  */
 export async function getCommunityMemberCount(areaId: string): Promise<number> {
-    const { count, error } = await supabase
-        .from("community_members")
-        .select("*", { count: "exact", head: true })
-        .eq("area_id", areaId);
-
-    if (error) return 0;
-    return count ?? 0;
+    return prisma.communityMember.count({
+        where: { areaId },
+    });
 }
 
 /**
  * Delete a community post (developer moderation).
  */
 export async function deletePost(postId: string): Promise<void> {
-    const { error } = await supabase
-        .from("community_posts")
-        .delete()
-        .eq("id", postId);
-
-    if (error) return;
+    await prisma.communityPost.delete({
+        where: { id: postId },
+    });
 }
 
 /**
  * Delete a community comment (developer moderation).
  */
 export async function deleteComment(commentId: string): Promise<void> {
-    const { error } = await supabase
-        .from("community_comments")
-        .delete()
-        .eq("id", commentId);
-
-    if (error) return;
+    await prisma.communityComment.delete({
+        where: { id: commentId },
+    });
 }
 
 /**
  * Subscribe to realtime community posts for an area.
+ * Mocked locally to support out-of-the-box offline runs.
  */
 export function subscribeToCommunityPosts(
     areaId: string,
     callback: (post: CommunityPost) => void
 ) {
-    return supabase
-        .channel(`community-posts-${areaId}`)
-        .on(
-            "postgres_changes",
-            {
-                event: "INSERT",
-                schema: "public",
-                table: "community_posts",
-                filter: `area_id=eq.${areaId}`,
-            },
-            (payload) => callback(payload.new as CommunityPost)
-        )
-        .subscribe((status, err) => {
-            // Silence errors when testing without schema in Dev mode
-            if (err) return;
-        });
+    return {
+        unsubscribe: () => {
+            // Noop
+        },
+    };
 }

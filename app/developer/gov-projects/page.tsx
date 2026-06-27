@@ -3,12 +3,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Building2, Search, RefreshCw, AlertCircle, Plus, Save, MapPin, CheckCircle2, TrendingUp, Calendar } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+
 
 export default function GovProjectsPage() {
     const [projects, setProjects] = useState<any[]>([]);

@@ -3,14 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, Users, Send, X, ChevronRight, UserPlus, UserMinus, Clock } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/AuthProvider";
 import type { CommunityPost, CommunityMember } from "@/types/database";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+
 
 interface CommunityPanelProps {
     areaId: string | null;
@@ -85,7 +82,7 @@ export default function CommunityPanel({ areaId, areaName, isOpen, onClose }: Co
                 schema: "public",
                 table: "community_posts",
                 filter: `area_id=eq.${areaId}`,
-            }, (payload) => {
+            }, (payload: any) => {
                 setPosts((prev) => [payload.new as CommunityPost, ...prev]);
             })
             .subscribe((status, err) => {

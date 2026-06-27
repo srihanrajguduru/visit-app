@@ -42,3 +42,11 @@ next-env.d.ts
 
 .vercel
 .env*.local
+
+# SQLite local databases
+*.db
+*.db-journal
+
+# Editor configuration
+.vscode/
+.idea/

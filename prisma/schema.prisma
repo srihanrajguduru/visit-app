@@ -1,0 +1,195 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String?
+  email     String   @unique
+  password  String
+  role      String   @default("user")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+model UserProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique @map("user_id")
+  name            String?
+  email           String?
+  avatarUrl       String?  @map("avatar_url")
+  areasAssociated String   @default("[]") @map("areas_associated")
+  joinedAt        DateTime @default(now()) @map("joined_at")
+
+  @@map("user_profiles")
+}
+
+model Area {
+  id                String   @id @default(uuid())
+  name              String
+  latitude          Float
+  longitude         Float
+  zone              String?
+  currentVisitScore Float?   @map("current_visit_score")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("areas")
+}
+
+model AreaMetrics {
+  id               String   @id @default(uuid())
+  areaId           String   @map("area_id")
+  datasetVersion   String?  @map("dataset_version")
+  aqi              Float?
+  noise            Float?
+  floodRisk        Float?   @map("flood_risk")
+  metroDistance    Float?   @map("metro_distance")
+  roadQuality      Float?   @map("road_quality")
+  waterSupplyScore Float?   @map("water_supply_score")
+  internetScore    Float?   @map("internet_score")
+  crimeRate        Float?   @map("crime_rate")
+  womenSafetyScore Float?   @map("women_safety_score")
+  amenityScore     Float?   @map("amenity_score")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@map("area_metrics")
+}
+
+model VisitScore {
+  id             String   @id @default(uuid())
+  areaId         String   @map("area_id")
+  visitScore     Float    @map("visit_score")
+  datasetVersion String?  @map("dataset_version")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("visit_scores")
+}
+
+model VisitScoreHistory {
+  id             String   @id @default(uuid())
+  areaId         String   @map("area_id")
+  visitScore     Float    @map("visit_score")
+  datasetVersion String?  @map("dataset_version")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("visit_score_history")
+}
+
+model SavedArea {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  areaId    String   @map("area_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("saved_areas")
+}
+
+model PropertyListing {
+  id                 String   @id @default(uuid())
+  title              String
+  description        String?
+  price              Float
+  propertyType       String   @map("property_type")
+  listingCategory    String   @default("sale") @map("listing_category")
+  bedrooms           Int
+  bathrooms          Int
+  areaSqft           Int      @map("area_sqft")
+  latitude           Float
+  longitude          Float
+  areaId             String?  @map("area_id")
+  visitScoreSnapshot Float?   @map("visit_score_snapshot")
+  ownerId            String   @map("owner_id")
+  verified           Boolean  @default(false)
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@map("property_listings")
+}
+
+model PropertyImage {
+  id         String @id @default(uuid())
+  propertyId String @map("property_id")
+  imageUrl   String @map("image_url")
+
+  @@map("property_images")
+}
+
+model PropertyMetadata {
+  id                String @id @default(uuid())
+  propertyId        String @map("property_id")
+  cleanlinessScore  Float  @default(0) @map("cleanliness_score")
+  maintenanceScore  Float  @default(0) @map("maintenance_score")
+  demandScore       Float  @default(0) @map("demand_score")
+  noiseScore        Float  @default(0) @map("noise_score")
+
+  @@map("property_metadata")
+}
+
+model CommunityPost {
+  id        String   @id @default(uuid())
+  areaId    String   @map("area_id")
+  userId    String   @map("user_id")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("community_posts")
+}
+
+model CommunityComment {
+  id        String   @id @default(uuid())
+  postId    String   @map("post_id")
+  userId    String   @map("user_id")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("community_comments")
+}
+
+model CommunityMember {
+  id             String   @id @default(uuid())
+  areaId         String   @map("area_id")
+  userId         String   @map("user_id")
+  membershipType String   @default("resident") @map("membership_type")
+  joinedAt       DateTime @default(now()) @map("joined_at")
+
+  @@unique([areaId, userId])
+  @@map("community_members")
+}
+
+model Dataset {
+  id         String   @id @default(uuid())
+  name       String
+  version    String
+  uploadedBy String   @map("uploaded_by")
+  fileCount  Int      @map("file_count")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("datasets")
+}
+
+model DatasetFile {
+  id         String   @id @default(uuid())
+  datasetId  String   @map("dataset_id")
+  filePath   String   @map("file_path")
+  fileType   String   @map("file_type")
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  @@map("dataset_files")
+}
+
+model InfrastructureNode {
+  id        String   @id @default(uuid())
+  name      String
+  type      String
+  latitude  Float
+  longitude Float
+  status    String   @default("Operational")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("infrastructure_nodes")
+}

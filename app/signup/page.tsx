@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { MapPin, Mail, Lock, ArrowRight, User } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { updateProfile } from "firebase/auth";
+
 
 export default function SignupPage() {
     const { signup, loginWithGoogle } = useAuth();
@@ -22,11 +22,7 @@ export default function SignupPage() {
         setError("");
         setLoading(true);
         try {
-            await signup(email, password);
-            const { auth } = await import("@/lib/firebase");
-            if (auth.currentUser) {
-                await updateProfile(auth.currentUser, { displayName: name });
-            }
+            await signup(email, password, name);
             router.push("/dashboard");
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Signup failed";

@@ -3,12 +3,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ShieldCheck, Search, RefreshCw, AlertCircle, Home, CheckCircle2, Bed, Bath, Maximize2 } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+
 
 export default function PropertyVerificationPage() {
     const [properties, setProperties] = useState<any[]>([]);

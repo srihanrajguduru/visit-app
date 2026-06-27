@@ -1,53 +1,70 @@
-import { createClient } from "@supabase/supabase-js";
+/**
+ * --------------------------------------------------------
+ * File: services/properties.ts
+ * Purpose: Property listings data access service.
+ * Responsibilities: Handles listing retrieval by area/owner, listing creation with automatic score snapshotting, dynamic search filtering, nearby listings proximity math, and verification toggles.
+ * Author: Antigravity Maintainer
+ * --------------------------------------------------------
+ */
+
+import { prisma } from "@/lib/prisma";
 import type { PropertyListing } from "@/types/database";
 
-// Use untyped client — the typed Database generic causes 'never' errors 
-// on new tables that are defined in types but may not yet exist in Supabase introspection
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+/**
+ * Format Prisma object to match original Supabase snake_case interface.
+ */
+function formatListing(listing: any): PropertyListing | null {
+    if (!listing) return null;
+    return {
+        id: listing.id,
+        title: listing.title,
+        description: listing.description,
+        price: Number(listing.price),
+        property_type: listing.propertyType,
+        listing_category: listing.listingCategory,
+        bedrooms: listing.bedrooms,
+        bathrooms: listing.bathrooms,
+        area_sqft: listing.areaSqft,
+        latitude: listing.latitude,
+        longitude: listing.longitude,
+        area_id: listing.areaId,
+        visit_score_snapshot: listing.visitScoreSnapshot,
+        owner_id: listing.ownerId,
+        verified: listing.verified,
+        created_at: listing.createdAt instanceof Date ? listing.createdAt.toISOString() : listing.createdAt,
+    } as unknown as PropertyListing;
+}
 
 /**
  * Get all property listings for a specific area.
  */
 export async function getListingsByArea(areaId: string): Promise<PropertyListing[]> {
-    const { data, error } = await supabase
-        .from("property_listings")
-        .select("*")
-        .eq("area_id", areaId)
-        .order("price");
-
-    if (error) return [];
-    return (data as PropertyListing[]) ?? [];
+    const listings = await prisma.propertyListing.findMany({
+        where: { areaId },
+        orderBy: { price: "asc" },
+    });
+    return listings.map((l) => formatListing(l)!) ?? [];
 }
 
 /**
  * Get a single property listing by ID.
  */
 export async function getListingById(id: string): Promise<PropertyListing | null> {
-    const { data, error } = await supabase
-        .from("property_listings")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-    if (error) return null;
-    return data as PropertyListing;
+    const listing = await prisma.propertyListing.findUnique({
+        where: { id },
+    });
+    return formatListing(listing);
 }
 
 /**
  * Get all property listings owned by a user.
  */
 export async function getListingsByOwner(ownerId: string): Promise<PropertyListing[]> {
-    const { data, error } = await supabase
-        .from("property_listings")
-        .select("*")
-        .eq("owner_id", ownerId)
-        .order("created_at", { ascending: false });
-
-    if (error) return [];
-    return (data as PropertyListing[]) ?? [];
+    const listings = await prisma.propertyListing.findMany({
+        where: { ownerId },
+        orderBy: { createdAt: "desc" },
+    });
+    return listings.map((l) => formatListing(l)!) ?? [];
 }
 
 /**
@@ -67,11 +84,11 @@ export async function createListing(listing: {
     owner_id: string;
 }): Promise<PropertyListing> {
     // Find nearest area to attach visit_score_snapshot
-    const { data: areas } = await supabase.from("areas").select("*");
+    const areas = await prisma.area.findMany();
     let nearestAreaId: string | null = null;
     let visitScoreSnapshot: number | null = null;
 
-    if (areas && areas.length > 0) {
+    if (areas.length > 0) {
         let minDist = Infinity;
         for (const area of areas) {
             const dist = Math.sqrt(
@@ -81,24 +98,30 @@ export async function createListing(listing: {
             if (dist < minDist) {
                 minDist = dist;
                 nearestAreaId = area.id;
-                visitScoreSnapshot = area.current_visit_score;
+                visitScoreSnapshot = area.currentVisitScore;
             }
         }
     }
 
-    const { data, error } = await supabase
-        .from("property_listings")
-        .insert({
-            ...listing,
-            area_id: nearestAreaId,
-            visit_score_snapshot: visitScoreSnapshot,
+    const created = await prisma.propertyListing.create({
+        data: {
+            title: listing.title,
+            description: listing.description || null,
+            price: listing.price,
+            propertyType: listing.property_type,
+            bedrooms: listing.bedrooms,
+            bathrooms: listing.bathrooms,
+            areaSqft: listing.area_sqft,
+            latitude: listing.latitude,
+            longitude: listing.longitude,
+            ownerId: listing.owner_id,
+            areaId: nearestAreaId,
+            visitScoreSnapshot: visitScoreSnapshot,
             verified: false,
-        } as any)
-        .select()
-        .single();
+        },
+    });
 
-    if (error) return {} as PropertyListing; // Fallback so it doesn't crash process
-    return data as PropertyListing;
+    return formatListing(created)!;
 }
 
 /**
@@ -112,20 +135,26 @@ export async function searchListings(filters: {
     minBedrooms?: number;
     verified?: boolean;
 }): Promise<PropertyListing[]> {
-    let query = supabase.from("property_listings").select("*");
+    const where: any = {};
 
-    if (filters.areaId) query = query.eq("area_id", filters.areaId);
-    if (filters.minPrice) query = query.gte("price", filters.minPrice);
-    if (filters.maxPrice) query = query.lte("price", filters.maxPrice);
-    if (filters.propertyType) query = query.eq("property_type", filters.propertyType);
-    if (filters.minBedrooms) query = query.gte("bedrooms", filters.minBedrooms);
-    if (filters.verified !== undefined) query = query.eq("verified", filters.verified);
+    if (filters.areaId) where.areaId = filters.areaId;
+    
+    if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+        where.price = {};
+        if (filters.minPrice !== undefined) where.price.gte = filters.minPrice;
+        if (filters.maxPrice !== undefined) where.price.lte = filters.maxPrice;
+    }
 
-    query = query.order("created_at", { ascending: false });
+    if (filters.propertyType) where.propertyType = filters.propertyType;
+    if (filters.minBedrooms !== undefined) where.bedrooms = { gte: filters.minBedrooms };
+    if (filters.verified !== undefined) where.verified = filters.verified;
 
-    const { data, error } = await query;
-    if (error) return [];
-    return (data as PropertyListing[]) ?? [];
+    const listings = await prisma.propertyListing.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+    });
+
+    return listings.map((l) => formatListing(l)!) ?? [];
 }
 
 /**
@@ -136,16 +165,17 @@ export async function getNearbyListings(
     lng: number,
     radiusKm: number = 2
 ): Promise<PropertyListing[]> {
-    const { data, error } = await supabase.from("property_listings").select("*");
-    if (error || !data) return [];
-
+    const listings = await prisma.propertyListing.findMany();
+    
     const degRadius = radiusKm / 111;
-    return (data as PropertyListing[]).filter((p) => {
+    const nearby = listings.filter((p) => {
         const dist = Math.sqrt(
             Math.pow(p.latitude - lat, 2) + Math.pow(p.longitude - lng, 2)
         );
         return dist <= degRadius;
     });
+
+    return nearby.map((l) => formatListing(l)!) ?? [];
 }
 
 /**
@@ -156,10 +186,8 @@ export async function toggleVerification(
     field: "verified",
     currentValue: boolean
 ): Promise<void> {
-    const { error } = await supabase
-        .from("property_listings")
-        .update({ [field]: !currentValue })
-        .eq("id", listingId);
-
-    if (error) return;
+    await prisma.propertyListing.update({
+        where: { id: listingId },
+        data: { verified: !currentValue },
+    });
 }

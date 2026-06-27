@@ -3,15 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { MessageSquare, Users, Send, UserPlus, UserMinus, Clock, ChevronDown, MapPin } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/AuthProvider";
 import MobileNavigation from "@/components/mobile/MobileNavigation";
 import type { CommunityPost, Area } from "@/types/database";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+
 
 export default function MobileCommunityPage() {
     const { user } = useAuth();
@@ -93,7 +90,7 @@ export default function MobileCommunityPage() {
                 schema: "public",
                 table: "community_posts",
                 filter: `area_id=eq.${selectedAreaId}`,
-            }, (payload) => {
+            }, (payload: any) => {
                 setPosts((prev) => [payload.new as CommunityPost, ...prev]);
             })
             .subscribe();

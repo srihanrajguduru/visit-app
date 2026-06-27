@@ -3,12 +3,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MessageSquare, Search, RefreshCw, Trash2, AlertCircle, Clock, Users } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+
 
 export default function CommunityModerationPage() {
     const [posts, setPosts] = useState<any[]>([]);

@@ -4,12 +4,9 @@ import { motion } from "framer-motion";
 import { Database, Map, Activity, Zap, Server, ShieldCheck, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+
 
 export default function DeveloperOverview() {
     const [stats, setStats] = useState({
@@ -30,7 +27,7 @@ export default function DeveloperOverview() {
 
             const { data: scores } = await supabase.from('visit_scores').select('visit_score');
             const avg = scores && scores.length > 0
-                ? scores.reduce((sum, curr) => sum + curr.visit_score, 0) / scores.length
+                ? scores.reduce((sum: number, curr: any) => sum + Number(curr.visit_score || 0), 0) / scores.length
                 : 0;
 
             setStats({

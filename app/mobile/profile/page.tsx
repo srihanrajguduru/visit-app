@@ -6,12 +6,8 @@ import { UserCircle, Settings, LogOut, ChevronRight, Bell, Heart, Shield, HelpCi
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
-import { createClient } from "@supabase/supabase-js";
 
-const untypedSupabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const untypedSupabase = supabase;
 
 export default function MobileProfilePage() {
     const { user, loading, logout } = useAuth();
