@@ -3,7 +3,7 @@
  * File: services/scores.ts
  * Purpose: Visit Score and metrics service.
  * Responsibilities: Retrieves environmental/infrastructure/social metrics, fetches current scores and history, and handles display-level sub-score math.
- * Author: Antigravity Maintainer
+ * Author: srihanrajguduru
  * --------------------------------------------------------
  */
 

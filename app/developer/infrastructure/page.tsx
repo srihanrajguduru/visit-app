@@ -1,9 +1,18 @@
+/**
+ * --------------------------------------------------------
+ * File: app/developer/infrastructure/page.tsx
+ * Purpose: Infrastructure nodes manager dashboard.
+ * Responsibilities: Adds municipal assets like metro stations, optical lines, roads, and displays them on a map.
+ * Author: srihanrajguduru
+ * --------------------------------------------------------
+ */
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { HardHat, Search, RefreshCw, AlertCircle, Plus, Save, MapPin, CheckCircle2, Train, Wifi, Route } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { getInfrastructureNodes, createInfrastructureNode } from "@/app/actions/dbActions";
 import { GoogleMap, useLoadScript, Marker } from "@react-google-maps/api";
 
 const mapContainerStyle = {
@@ -38,21 +47,12 @@ export default function InfrastructureManagementPage() {
     const fetchInfrastructure = async () => {
         setLoading(true);
         // Assuming an 'infrastructure_nodes' table exists or will exist
-        const { data, error } = await supabase
-            .from("infrastructure_nodes")
-            .select("*")
-            .order("created_at", { ascending: false });
+        const { data, error } = await getInfrastructureNodes();
 
         if (error) {
-            if (error.code === '42P01' || error.message.includes("Could not find the table")) {
-                // Mock if table doesn't exist
-                setInfrastructures(mockInfrastructure);
-            } else {
-                setMessage({ type: "error", text: error.message });
-            }
+            setMessage({ type: "error", text: error.message });
         } else {
-            setInfrastructures(data || []);
-            if (data?.length === 0) setInfrastructures(mockInfrastructure);
+            setInfrastructures(data?.length ? data : mockInfrastructure);
         }
         setLoading(false);
     };
@@ -72,28 +72,20 @@ export default function InfrastructureManagementPage() {
             return;
         }
 
-        const { data, error } = await supabase.from("infrastructure_nodes").insert([{
+        const { data, error } = await createInfrastructureNode({
             name: newInfra.name,
             type: newInfra.type,
             latitude: parseFloat(newInfra.latitude),
             longitude: parseFloat(newInfra.longitude),
             status: newInfra.status
-        }]).select();
+        });
 
         if (error) {
-            // if table missing, just add to local state
-            if (error.code === '42P01' || error.message.includes("Could not find the table")) {
-                const fakeNew = { ...newInfra, id: Math.random().toString(), latitude: parseFloat(newInfra.latitude), longitude: parseFloat(newInfra.longitude) };
-                setInfrastructures([fakeNew, ...infrastructures]);
-                setMessage({ type: "success", text: "Infrastructure added to local grid view (Database table pending)." });
-                setNewInfra({ name: "", type: "Metro Station", latitude: "", longitude: "", status: "Operational" });
-            } else {
-                setMessage({ type: "error", text: error.message });
-            }
+            setMessage({ type: "error", text: error.message });
         } else if (data) {
             setMessage({ type: "success", text: "Infrastructure node registered successfully!" });
             setNewInfra({ name: "", type: "Metro Station", latitude: "", longitude: "", status: "Operational" });
-            setInfrastructures([data[0], ...infrastructures]);
+            setInfrastructures([data, ...infrastructures]);
         }
 
         setSaving(false);

@@ -1,9 +1,18 @@
+/**
+ * --------------------------------------------------------
+ * File: app/developer/properties/page.tsx
+ * Purpose: Developer property verification dashboard page.
+ * Responsibilities: Allows administrators to review, filter, and verify properties uploaded by owners.
+ * Author: srihanrajguduru
+ * --------------------------------------------------------
+ */
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ShieldCheck, Search, RefreshCw, AlertCircle, Home, CheckCircle2, Bed, Bath, Maximize2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { getPropertyListings, togglePropertyVerification } from "@/app/actions/dbActions";
 
 
 
@@ -15,25 +24,10 @@ export default function PropertyVerificationPage() {
 
     const fetchProperties = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from("property_listings")
-            .select(`
-                id,
-                title,
-                price,
-                property_type,
-                bedrooms,
-                bathrooms,
-                area_sqft,
-                verified,
-                owner_id,
-                visit_score_snapshot,
-                areas ( name, zone )
-            `)
-            .order("created_at", { ascending: false });
+        const { data, error } = await getPropertyListings();
 
         if (error) {
-            if (error.code === '42P01' || error.message.includes('Could not find the table')) {
+            if (error.message.includes('Could not find the table')) {
                 // Table doesn't exist yet — show mock data for UI dev
                 setProperties(mockProperties);
             } else {
@@ -54,10 +48,7 @@ export default function PropertyVerificationPage() {
         // Optimistic UI
         setProperties(prev => prev.map(p => p.id === id ? { ...p, verified: !currentValue } : p));
 
-        const { error } = await supabase
-            .from("property_listings")
-            .update({ verified: !currentValue })
-            .eq("id", id);
+        const { error } = await togglePropertyVerification(id, currentValue);
 
         if (error) {
             // Revert on error

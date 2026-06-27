@@ -1,7 +1,16 @@
+/**
+ * --------------------------------------------------------
+ * File: app/mobile/saved/page.tsx
+ * Purpose: Saved areas management page for mobile.
+ * Responsibilities: Renders neighborhoods saved by the user, handles removal (unsaving), and links back to the map.
+ * Author: srihanrajguduru
+ * --------------------------------------------------------
+ */
+
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { getSavedAreasWithMetadata, unsaveArea } from "@/app/actions/dbActions";
 import { Area } from "@/types/database";
 import MobileNavigation from "@/components/mobile/MobileNavigation";
 import { ArrowRight, MapPin, Bookmark, AlertCircle, Trash2 } from "lucide-react";
@@ -24,35 +33,12 @@ export default function MobileSavedPage() {
         }
 
         fetchSavedAreas();
-
-        // Subscribe to changes in saved_areas to trigger realtime refetch
-        const channel = supabase.channel('saved_areas_changes')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'saved_areas', filter: `user_id=eq.${user.uid}` },
-                () => {
-                    fetchSavedAreas();
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
     }, [user, authLoading]);
 
     async function fetchSavedAreas() {
         if (!user) return;
         try {
-            // Using a subquery join syntax to fetch 'areas' rows linked by 'saved_areas'
-            const { data, error } = await supabase
-                .from("saved_areas")
-                .select(`
-                    area_id,
-                    areas (*)
-                `)
-                .eq("user_id", user.uid)
-                .order("created_at", { ascending: false });
+            const { data, error } = await getSavedAreasWithMetadata(user.uid);
 
             if (error) {
                 console.error("Error fetching saved areas:", error);
@@ -61,7 +47,7 @@ export default function MobileSavedPage() {
             }
 
             // Extract the nested structured area objects
-            const parsedAreas = (data as any[]).map(row => row.areas).filter(Boolean) as Area[];
+            const parsedAreas = (data as any[]).map(row => row.area).filter(Boolean) as Area[];
             setAreas(parsedAreas);
         } catch (err) {
             console.error("Unexpected error:", err);
@@ -78,11 +64,7 @@ export default function MobileSavedPage() {
         setAreas(areas.filter(a => a.id !== areaId));
 
         try {
-            const { error } = await supabase
-                .from("saved_areas")
-                .delete()
-                .eq("area_id", areaId)
-                .eq("user_id", user.uid);
+            const { error } = await unsaveArea(user.uid, areaId);
 
             if (error) throw error;
             toast.success("Area removed");

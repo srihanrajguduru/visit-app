@@ -23,7 +23,7 @@ Vi-SiT is a real-time, neighborhood-level livability scoring platform designed t
 ## Tech Stack
 
 - **Frontend:** Next.js (App Router, Tailwind CSS v4, Framer Motion, Recharts)
-- **Backend:** Next.js API Routes (Serverless)
+- **Backend:** Next.js Server Actions & API Routes
 - **Database:** SQLite (local self-contained file database)
 - **ORM:** Prisma (v6)
 - **Authentication:** Custom JWT-based session tokens with HTTP-only cookies and bcrypt hashing
@@ -38,14 +38,15 @@ Vi-SiT is a real-time, neighborhood-level livability scoring platform designed t
 ├── app/
 │   ├── (app)/
 │   │   └── dashboard/      # Desktop dashboard interface
+│   ├── actions/
+│   │   └── dbActions.ts    # Secure Next.js Server Actions for SQLite access
 │   ├── api/
 │   │   ├── auth/           # Login, signup, logout, session routes
 │   │   ├── calculate-score # Ingests metrics and computes scores
-│   │   ├── process-dataset # Parses CSV/Excel datasets
-│   │   └── supabase-mock   # Database proxy for client-side queries
+│   │   └── process-dataset # Ingests and parses CSV/Excel datasets
 │   ├── developer/          # Admin control boards and datasets page
 │   ├── login/              # Login screen
-│   ├── mobile/             # Mobile-optimized pages (Explore, Map, Profile)
+│   ├── mobile/             # Mobile-optimized pages (Explore, Map, Profile, Community)
 │   ├── signup/             # Signup screen
 │   ├── globals.css         # Tailwind v4 globals
 │   ├── layout.tsx          # Root layout with theme context
@@ -53,15 +54,13 @@ Vi-SiT is a real-time, neighborhood-level livability scoring platform designed t
 ├── components/             # Reusable UI components (mobile & desktop)
 ├── lib/
 │   ├── prisma.ts           # Singleton Prisma client instance
-│   ├── supabase.ts         # Client query proxy wrapper
 │   └── utils.ts            # Scoring helpers and color scales
 ├── prisma/
 │   ├── schema.prisma       # Database models schema definition
 │   ├── seed.ts             # Demo data population script
 │   └── migrations/         # Database migration history
-├── services/               # Modular data access layer
+├── services/               # Modular database access layer
 ├── types/                  # Database and common interfaces
-├── proxy.ts                # Mobile viewport detector and router
 └── package.json            # Configuration and dependencies
 ```
 
@@ -71,10 +70,10 @@ Vi-SiT is a real-time, neighborhood-level livability scoring platform designed t
 
 ```mermaid
 graph TD
-    Client[Next.js Client Components] -->|HTTP Requests| API[Next.js API Routes]
-    Client -->|mock Supabase API| ProxyClient[lib/supabase.ts wrapper]
-    ProxyClient -->|POST /api/supabase-mock| API
-    API -->|Prisma Client| DB[(SQLite dev.db)]
+    Client[Next.js Client Components] -->|Direct Server Actions| Actions[app/actions/dbActions.ts]
+    Client -->|HTTP Requests| API[Next.js API Routes]
+    Actions -->|Prisma Client| DB[(SQLite dev.db)]
+    API -->|Prisma Client| DB
     API -->|Services| BusinessLogic[services/ scores, areas, properties]
     BusinessLogic -->|Prisma Client| DB
 ```
@@ -177,7 +176,7 @@ Retrieves the logged-in user profile from session cookies.
   }
   ```
 
-### 2. Force Visit Score Calculation (`POST /api/api/calculate-score`)
+### 2. Force Visit Score Calculation (`POST /api/calculate-score`)
 Recalculates the proprietary livability score of an area.
 - **Request Body:**
   ```json

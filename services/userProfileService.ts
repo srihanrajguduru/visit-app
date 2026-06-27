@@ -3,7 +3,7 @@
  * File: services/userProfileService.ts
  * Purpose: User profile and member association service.
  * Responsibilities: Manages profile creation, fetching profile by ID, updating profile data, and retrieving associated listings or joined communities.
- * Author: Antigravity Maintainer
+ * Author: srihanrajguduru
  * --------------------------------------------------------
  */
 

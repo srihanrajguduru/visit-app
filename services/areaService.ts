@@ -3,7 +3,7 @@
  * File: services/areaService.ts
  * Purpose: Area-based metrics retrieval service.
  * Responsibilities: Maps coordinates to nearest monitoring areas, queries local SQLite database via Prisma for metrics, calculates display sub-scores, and generates pros/cons summaries.
- * Author: Antigravity Maintainer
+ * Author: srihanrajguduru
  * --------------------------------------------------------
  */
 

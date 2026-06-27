@@ -3,7 +3,7 @@
  * File: app/api/auth/me/route.ts
  * Purpose: Custom session retrieval endpoint.
  * Responsibilities: Reads session cookies, decodes/verifies JWTs, and returns user session data.
- * Author: Antigravity Maintainer
+ * Author: srihanrajguduru
  * --------------------------------------------------------
  */
 

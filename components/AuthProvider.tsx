@@ -3,7 +3,7 @@
  * File: components/AuthProvider.tsx
  * Purpose: Custom local session state provider.
  * Responsibilities: Replicates Firebase authentication context interface, handling session state recovery, custom credential login/signup, mock Google login, and session destruction.
- * Author: Antigravity Maintainer
+ * Author: srihanrajguduru
  * --------------------------------------------------------
  */
 

@@ -1,9 +1,18 @@
+/**
+ * --------------------------------------------------------
+ * File: app/developer/metrics/page.tsx
+ * Purpose: Area metrics manual overrides dashboard.
+ * Responsibilities: Allows administrators to review and override specific environmental, transport, and social scores for any neighborhood.
+ * Author: srihanrajguduru
+ * --------------------------------------------------------
+ */
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Activity, Save, Search, RefreshCw, AlertCircle, CheckCircle2, Map } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { getAllAreasAlphabetical, getAreaMetrics, createAreaMetrics } from "@/app/actions/dbActions";
 
 
 
@@ -29,7 +38,7 @@ export default function MetricsManagementPage() {
 
     const fetchAreas = async () => {
         setLoading(true);
-        const { data } = await supabase.from("areas").select("id, name, zone").order("name");
+        const { data } = await getAllAreasAlphabetical();
         if (data) setAreas(data);
         setLoading(false);
     };
@@ -51,19 +60,13 @@ export default function MetricsManagementPage() {
             setMetricsLoading(true);
             setMessage({ type: "", text: "" });
 
-            const { data, error } = await supabase
-                .from("area_metrics")
-                .select("*")
-                .eq("area_id", selectedAreaId)
-                .order("created_at", { ascending: false })
-                .limit(1)
-                .single();
+            const { data, error } = await getAreaMetrics(selectedAreaId);
 
             if (data) {
                 setMetrics({
                     aqi: data.aqi || 0,
                     noise: data.noise || 0,
-                    flood_risk: data.flood_risk || "Low",
+                    flood_risk: String(data.flood_risk || "Low"),
                     metro_distance: data.metro_distance || 0,
                     road_quality: data.road_quality || 0,
                     internet_score: data.internet_score || 0,
@@ -76,7 +79,7 @@ export default function MetricsManagementPage() {
                     aqi: 0, noise: 0, flood_risk: "Low", metro_distance: 0,
                     road_quality: 0, internet_score: 0, crime_rate: 0, women_safety_score: 0
                 });
-                if (error && error.code !== "PGRST116") {
+                if (error) {
                     console.error(error);
                 }
             }
@@ -93,9 +96,7 @@ export default function MetricsManagementPage() {
         setSaving(true);
         setMessage({ type: "", text: "" });
 
-        // Upsert metrics logic: we insert a new row as the current active version, 
-        // or we just update. The simplest is to insert a new row 
-        const { error } = await supabase.from("area_metrics").insert([{
+        const { error } = await createAreaMetrics({
             area_id: selectedAreaId,
             dataset_version: "manual_override_" + new Date().getTime(),
             aqi: Number(metrics.aqi),
@@ -106,7 +107,7 @@ export default function MetricsManagementPage() {
             internet_score: Number(metrics.internet_score),
             crime_rate: Number(metrics.crime_rate),
             women_safety_score: Number(metrics.women_safety_score)
-        }]);
+        });
 
         if (error) {
             setMessage({ type: "error", text: error.message });

@@ -1,9 +1,18 @@
+/**
+ * --------------------------------------------------------
+ * File: app/mobile/community/page.tsx
+ * Purpose: Neighborhood community discussions page for mobile viewport.
+ * Responsibilities: Supports picking a neighborhood area, viewing posts, joining/leaving communities, and posting messages.
+ * Author: srihanrajguduru
+ * --------------------------------------------------------
+ */
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { MessageSquare, Users, Send, UserPlus, UserMinus, Clock, ChevronDown, MapPin } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { getAllAreasAlphabetical, getAreaCommunityPosts, getCommunityMemberCount, getCommunityMembership, joinAreaCommunity, leaveAreaCommunity, createAreaPost } from "@/app/actions/dbActions";
 import { useAuth } from "@/components/AuthProvider";
 import MobileNavigation from "@/components/mobile/MobileNavigation";
 import type { CommunityPost, Area } from "@/types/database";
@@ -28,10 +37,7 @@ export default function MobileCommunityPage() {
     // Fetch areas
     useEffect(() => {
         async function loadAreas() {
-            const { data } = await supabase
-                .from("areas")
-                .select("*")
-                .order("name");
+            const { data } = await getAllAreasAlphabetical();
             if (data) {
                 setAreas(data as Area[]);
                 if (data.length > 0 && !selectedAreaId) {
@@ -49,28 +55,15 @@ export default function MobileCommunityPage() {
         async function loadCommunity() {
             setLoading(true);
 
-            const { data: postsData } = await supabase
-                .from("community_posts")
-                .select("*")
-                .eq("area_id", selectedAreaId!)
-                .order("created_at", { ascending: false })
-                .limit(50);
+            const { data: postsData } = await getAreaCommunityPosts(selectedAreaId!);
 
-            setPosts(postsData && postsData.length > 0 ? (postsData as CommunityPost[]) : mockPosts);
+            setPosts(postsData && postsData.length > 0 ? (postsData as any[]) : mockPosts);
 
-            const { count } = await supabase
-                .from("community_members")
-                .select("*", { count: "exact", head: true })
-                .eq("area_id", selectedAreaId!);
+            const { data: count } = await getCommunityMemberCount(selectedAreaId!);
             setMemberCount(count ?? 8);
 
             if (user) {
-                const { data: membership } = await supabase
-                    .from("community_members")
-                    .select("*")
-                    .eq("area_id", selectedAreaId!)
-                    .eq("user_id", user.uid)
-                    .maybeSingle();
+                const { data: membership } = await getCommunityMembership(selectedAreaId!, user.uid);
                 setIsMember(!!membership);
             }
 
@@ -80,33 +73,12 @@ export default function MobileCommunityPage() {
         loadCommunity();
     }, [selectedAreaId, user]);
 
-    // Realtime
-    useEffect(() => {
-        if (!selectedAreaId) return;
-        const channel = supabase
-            .channel(`mobile-community-${selectedAreaId}`)
-            .on("postgres_changes", {
-                event: "INSERT",
-                schema: "public",
-                table: "community_posts",
-                filter: `area_id=eq.${selectedAreaId}`,
-            }, (payload: any) => {
-                setPosts((prev) => [payload.new as CommunityPost, ...prev]);
-            })
-            .subscribe();
-        return () => { supabase.removeChannel(channel); };
-    }, [selectedAreaId]);
-
     const handlePost = async () => {
         if (!newPost.trim() || !user || !selectedAreaId || posting) return;
         setPosting(true);
-        const { data, error } = await supabase
-            .from("community_posts")
-            .insert({ area_id: selectedAreaId, user_id: user.uid, content: newPost.trim() })
-            .select()
-            .single();
+        const { data, error } = await createAreaPost(selectedAreaId, user.uid, newPost.trim());
         if (!error && data) {
-            setPosts((prev) => [data as CommunityPost, ...prev]);
+            setPosts((prev) => [data as any, ...prev]);
             setNewPost("");
         }
         setPosting(false);
@@ -115,11 +87,11 @@ export default function MobileCommunityPage() {
     const handleToggleMembership = async () => {
         if (!user || !selectedAreaId) return;
         if (isMember) {
-            await supabase.from("community_members").delete().eq("area_id", selectedAreaId).eq("user_id", user.uid);
+            await leaveAreaCommunity(selectedAreaId, user.uid);
             setIsMember(false);
             setMemberCount((c) => Math.max(0, c - 1));
         } else {
-            await supabase.from("community_members").insert({ area_id: selectedAreaId, user_id: user.uid, membership_type: "resident" });
+            await joinAreaCommunity(selectedAreaId, user.uid);
             setIsMember(true);
             setMemberCount((c) => c + 1);
         }

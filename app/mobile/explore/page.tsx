@@ -1,7 +1,16 @@
+/**
+ * --------------------------------------------------------
+ * File: app/mobile/explore/page.tsx
+ * Purpose: Trending neighborhoods explorer page for mobile.
+ * Responsibilities: Lists top neighborhoods sorted by their current Visit Score, supporting saving/unsaving.
+ * Author: srihanrajguduru
+ * --------------------------------------------------------
+ */
+
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { getTrendingAreas, getSavedAreaIds, saveArea, unsaveArea } from "@/app/actions/dbActions";
 import { Area } from "@/types/database";
 import MobileNavigation from "@/components/mobile/MobileNavigation";
 import { MapPin, TrendingUp, AlertCircle, Bookmark } from "lucide-react";
@@ -20,11 +29,7 @@ export default function MobileExplorePage() {
     useEffect(() => {
         async function fetchTrendingAreas() {
             try {
-                const { data, error } = await supabase
-                    .from("areas")
-                    .select("id, name, latitude, longitude, current_visit_score")
-                    .order("current_visit_score", { ascending: false, nullsFirst: false })
-                    .limit(20);
+                const { data, error } = await getTrendingAreas();
 
                 if (error) {
                     console.error("Error fetching areas:", error);
@@ -48,10 +53,7 @@ export default function MobileExplorePage() {
             if (!user) return;
 
             try {
-                const { data, error } = await supabase
-                    .from("saved_areas")
-                    .select("area_id")
-                    .eq("user_id", user.uid);
+                const { data, error } = await getSavedAreaIds(user.uid);
 
                 if (error) {
                     console.error("Error fetching saved areas:", error);
@@ -79,11 +81,7 @@ export default function MobileExplorePage() {
         setSavingAreaId(areaId);
         try {
             if (isSaved(areaId)) {
-                const { error } = await supabase
-                    .from("saved_areas")
-                    .delete()
-                    .eq("user_id", user.uid)
-                    .eq("area_id", areaId);
+                const { error } = await unsaveArea(user.uid, areaId);
 
                 if (error) throw error;
                 setSavedAreaIds((prev) => {
@@ -93,9 +91,7 @@ export default function MobileExplorePage() {
                 });
                 toast.success("Area unsaved.");
             } else {
-                const { error } = await supabase
-                    .from("saved_areas")
-                    .insert({ user_id: user.uid, area_id: areaId } as any);
+                const { error } = await saveArea(user.uid, areaId);
 
                 if (error) throw error;
                 setSavedAreaIds((prev) => new Set(prev).add(areaId));

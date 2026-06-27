@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, Users, Send, X, ChevronRight, UserPlus, UserMinus, Clock } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { getAreaCommunityPosts, getCommunityMemberCount, getCommunityMembership, joinAreaCommunity, leaveAreaCommunity, createAreaPost } from "@/app/actions/dbActions";
 import { useAuth } from "@/components/AuthProvider";
 import type { CommunityPost, CommunityMember } from "@/types/database";
 
@@ -33,35 +33,22 @@ export default function CommunityPanel({ areaId, areaName, isOpen, onClose }: Co
             setLoading(true);
 
             // Load posts
-            const { data: postsData } = await supabase
-                .from("community_posts")
-                .select("*")
-                .eq("area_id", areaId!)
-                .order("created_at", { ascending: false })
-                .limit(50);
+            const { data: postsData } = await getAreaCommunityPosts(areaId!);
 
             if (postsData && postsData.length > 0) {
-                setPosts(postsData as CommunityPost[]);
+                setPosts(postsData as any[]);
             } else {
                 // Mock data for UI dev
                 setPosts(mockPosts);
             }
 
             // Member count
-            const { count } = await supabase
-                .from("community_members")
-                .select("*", { count: "exact", head: true })
-                .eq("area_id", areaId!);
+            const { data: count } = await getCommunityMemberCount(areaId!);
             setMemberCount(count ?? 12);
 
             // Check membership
             if (user) {
-                const { data: membership } = await supabase
-                    .from("community_members")
-                    .select("*")
-                    .eq("area_id", areaId!)
-                    .eq("user_id", user.uid)
-                    .maybeSingle();
+                const { data: membership } = await getCommunityMembership(areaId!, user.uid);
                 setIsMember(!!membership);
             }
 
@@ -71,44 +58,14 @@ export default function CommunityPanel({ areaId, areaName, isOpen, onClose }: Co
         loadCommunity();
     }, [areaId, isOpen, user]);
 
-    // Realtime subscription
-    useEffect(() => {
-        if (!areaId || !isOpen) return;
-
-        const channel = supabase
-            .channel(`community-${areaId}`)
-            .on("postgres_changes", {
-                event: "INSERT",
-                schema: "public",
-                table: "community_posts",
-                filter: `area_id=eq.${areaId}`,
-            }, (payload: any) => {
-                setPosts((prev) => [payload.new as CommunityPost, ...prev]);
-            })
-            .subscribe((status, err) => {
-                // Ignore realtime errors if table doesn't exist yet
-                if (err) return;
-            });
-
-        return () => { supabase.removeChannel(channel); };
-    }, [areaId, isOpen]);
-
     const handlePost = async () => {
         if (!newPost.trim() || !user || !areaId || posting) return;
 
         setPosting(true);
-        const { data, error } = await supabase
-            .from("community_posts")
-            .insert({
-                area_id: areaId,
-                user_id: user.uid,
-                content: newPost.trim(),
-            })
-            .select()
-            .single();
+        const { data, error } = await createAreaPost(areaId, user.uid, newPost.trim());
 
         if (!error && data) {
-            setPosts((prev) => [data as CommunityPost, ...prev]);
+            setPosts((prev) => [data as any, ...prev]);
             setNewPost("");
         }
         setPosting(false);
@@ -118,17 +75,11 @@ export default function CommunityPanel({ areaId, areaName, isOpen, onClose }: Co
         if (!user || !areaId) return;
 
         if (isMember) {
-            await supabase
-                .from("community_members")
-                .delete()
-                .eq("area_id", areaId)
-                .eq("user_id", user.uid);
+            await leaveAreaCommunity(areaId, user.uid);
             setIsMember(false);
             setMemberCount((c) => Math.max(0, c - 1));
         } else {
-            await supabase
-                .from("community_members")
-                .insert({ area_id: areaId, user_id: user.uid, membership_type: "resident" });
+            await joinAreaCommunity(areaId, user.uid);
             setIsMember(true);
             setMemberCount((c) => c + 1);
         }

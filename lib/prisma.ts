@@ -3,7 +3,7 @@
  * File: lib/prisma.ts
  * Purpose: Singleton PrismaClient initialization.
  * Responsibilities: Ensures only a single PrismaClient connection is active.
- * Author: Antigravity Maintainer
+ * Author: srihanrajguduru
  * --------------------------------------------------------
  */
 

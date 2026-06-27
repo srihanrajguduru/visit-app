@@ -3,7 +3,7 @@
  * File: app/api/calculate-score/route.ts
  * Purpose: Server-side Visit Score calculation engine.
  * Responsibilities: Aggregates environmental, social, and infrastructure metrics, runs the proprietary scoring weight formulas, updates current score snapshots, logs histories, and returns scores.
- * Author: Antigravity Maintainer
+ * Author: srihanrajguduru
  * --------------------------------------------------------
  */
 

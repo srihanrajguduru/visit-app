@@ -3,7 +3,7 @@
  * File: services/areas.ts
  * Purpose: Area data access service.
  * Responsibilities: Handles fetching areas list, fetching single area by ID, and computing the nearest area based on coordinates using Prisma.
- * Author: Antigravity Maintainer
+ * Author: srihanrajguduru
  * --------------------------------------------------------
  */
 

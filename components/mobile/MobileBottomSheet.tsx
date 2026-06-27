@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Area, AreaMetrics } from "@/types/database";
-import { supabase } from "@/lib/supabase";
+import { getAreaMetrics, checkSavedStatus, saveArea, unsaveArea } from "@/app/actions/dbActions";
 import { motion, useAnimation, PanInfo } from "framer-motion";
 import MobileVisitScoreCard from "./MobileVisitScoreCard";
 import MobilePropertyFeed from "./MobilePropertyFeed";
@@ -55,31 +55,20 @@ export default function MobileBottomSheet({ areas, selectedArea, visitScoreData,
 
         async function fetchMetrics() {
             setIsLoading(true);
-            const { data } = await supabase
-                .from("area_metrics")
-                .select("*")
-                .eq("area_id", selectedArea!.id)
-                .order("created_at", { ascending: false })
-                .limit(1)
-                .single();
+            const { data } = await getAreaMetrics(selectedArea!.id);
 
             if (data) setMetrics(data as AreaMetrics);
             setIsLoading(false);
         }
 
-        async function checkSavedStatus() {
+        async function loadSavedStatus() {
             if (!user) return;
-            const { data } = await supabase
-                .from("saved_areas")
-                .select("id")
-                .eq("area_id", selectedArea!.id)
-                .eq("user_id", user.uid)
-                .single();
+            const { data } = await checkSavedStatus(user.uid, selectedArea!.id);
             setIsSaved(!!data);
         }
 
         if (!hasAdvancedData) fetchMetrics();
-        checkSavedStatus();
+        loadSavedStatus();
     }, [selectedArea, hasAdvancedData, controls, user]);
 
     // Handle drag end to snap to nearest point
@@ -308,23 +297,14 @@ export default function MobileBottomSheet({ areas, selectedArea, visitScoreData,
         try {
             if (isSaved) {
                 // Remove
-                const { error } = await supabase
-                    .from("saved_areas")
-                    .delete()
-                    .eq("area_id", selectedArea!.id)
-                    .eq("user_id", user.uid);
+                const { error } = await unsaveArea(user.uid, selectedArea!.id);
 
                 if (error) throw error;
                 setIsSaved(false);
                 toast.success("Removed from saved areas");
             } else {
                 // Save
-                const { error } = await supabase
-                    .from("saved_areas")
-                    .insert({
-                        area_id: selectedArea!.id,
-                        user_id: user.uid
-                    } as any);
+                const { error } = await saveArea(user.uid, selectedArea!.id);
 
                 if (error) throw error;
                 setIsSaved(true);

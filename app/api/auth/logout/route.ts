@@ -3,7 +3,7 @@
  * File: app/api/auth/logout/route.ts
  * Purpose: Custom logout endpoint.
  * Responsibilities: Clears authenticated session cookies.
- * Author: Antigravity Maintainer
+ * Author: srihanrajguduru
  * --------------------------------------------------------
  */
 

@@ -1,9 +1,18 @@
+/**
+ * --------------------------------------------------------
+ * File: app/developer/gov-projects/page.tsx
+ * Purpose: Municipal development projects manager dashboard.
+ * Responsibilities: Registers upcoming government projects (e.g. roads, rails) to influence long-term neighborhood scoring multipliers.
+ * Author: srihanrajguduru
+ * --------------------------------------------------------
+ */
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Building2, Search, RefreshCw, AlertCircle, Plus, Save, MapPin, CheckCircle2, TrendingUp, Calendar } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { getGovProjects, createGovProject } from "@/app/actions/dbActions";
 
 
 
@@ -24,20 +33,12 @@ export default function GovProjectsPage() {
 
     const fetchProjects = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from("gov_projects")
-            .select("*")
-            .order("completion_date", { ascending: true });
+        const { data, error } = await getGovProjects();
 
         if (error) {
-            if (error.code === '42P01') {
-                setProjects(mockProjects);
-            } else {
-                setMessage({ type: "error", text: error.message });
-            }
+            setMessage({ type: "error", text: error.message });
         } else {
-            setProjects(data || []);
-            if (data?.length === 0) setProjects(mockProjects);
+            setProjects(data || mockProjects);
         }
         setLoading(false);
     };
@@ -57,27 +58,20 @@ export default function GovProjectsPage() {
             return;
         }
 
-        const { data, error } = await supabase.from("gov_projects").insert([{
+        const { data, error } = await createGovProject({
             project_name: newProject.project_name,
             latitude: parseFloat(newProject.latitude),
             longitude: parseFloat(newProject.longitude),
             completion_date: newProject.completion_date,
             impact_score: parseFloat(newProject.impact_score)
-        }]).select();
+        });
 
         if (error) {
-            if (error.code === '42P01') {
-                const fakeNew = { ...newProject, id: Math.random().toString(), latitude: parseFloat(newProject.latitude), longitude: parseFloat(newProject.longitude), impact_score: parseFloat(newProject.impact_score) };
-                setProjects([...projects, fakeNew].sort((a, b) => new Date(a.completion_date).getTime() - new Date(b.completion_date).getTime()));
-                setMessage({ type: "success", text: "Project registered to local timeline (Database table pending)." });
-                setNewProject({ project_name: "", latitude: "", longitude: "", completion_date: "", impact_score: "1.10" });
-            } else {
-                setMessage({ type: "error", text: error.message });
-            }
+            setMessage({ type: "error", text: error.message });
         } else if (data) {
             setMessage({ type: "success", text: "Municipal project registered successfully!" });
             setNewProject({ project_name: "", latitude: "", longitude: "", completion_date: "", impact_score: "1.10" });
-            setProjects([...projects, data[0]].sort((a, b) => new Date(a.completion_date).getTime() - new Date(b.completion_date).getTime()));
+            setProjects([...projects, data].sort((a, b) => new Date(a.completion_date).getTime() - new Date(b.completion_date).getTime()));
         }
 
         setSaving(false);

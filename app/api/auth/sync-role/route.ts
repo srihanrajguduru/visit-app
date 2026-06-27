@@ -3,7 +3,7 @@
  * File: app/api/auth/sync-role/route.ts
  * Purpose: Custom user role syncing endpoint.
  * Responsibilities: Checks local user database for roles and returns them.
- * Author: Antigravity Maintainer
+ * Author: srihanrajguduru
  * --------------------------------------------------------
  */
 

@@ -3,7 +3,7 @@
  * File: services/visitScoreService.ts
  * Purpose: Visit Score coordinate lookup service.
  * Responsibilities: Performs Haversine distance search over coordinates to locate nearest area, aggregates local SQLite environmental, social, and infrastructure metrics, and yields pros/cons summaries.
- * Author: Antigravity Maintainer
+ * Author: srihanrajguduru
  * --------------------------------------------------------
  */
 

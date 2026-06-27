@@ -1,3 +1,12 @@
+/**
+ * --------------------------------------------------------
+ * File: app/mobile/profile/page.tsx
+ * Purpose: User profile and activity statistics page for mobile.
+ * Responsibilities: Renders user profile information, activity statistics, navigation shortcuts, and handles user log out.
+ * Author: srihanrajguduru
+ * --------------------------------------------------------
+ */
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,9 +14,7 @@ import MobileNavigation from "@/components/mobile/MobileNavigation";
 import { UserCircle, Settings, LogOut, ChevronRight, Bell, Heart, Shield, HelpCircle, Smartphone, MessageSquare, Building2, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
-import { supabase } from "@/lib/supabase";
-
-const untypedSupabase = supabase;
+import { getProfileStats } from "@/app/actions/dbActions";
 
 export default function MobileProfilePage() {
     const { user, loading, logout } = useAuth();
@@ -20,23 +27,12 @@ export default function MobileProfilePage() {
         async function fetchProfileData() {
             if (!user) return;
 
-            const { count: savedC } = await supabase
-                .from("saved_areas")
-                .select("*", { count: "exact", head: true })
-                .eq("user_id", user.uid);
-            if (savedC !== null) setSavedCount(savedC);
-
-            const { count: commC } = await untypedSupabase
-                .from("community_members")
-                .select("*", { count: "exact", head: true })
-                .eq("user_id", user.uid);
-            setCommunityCount(commC ?? 0);
-
-            const { count: listC } = await untypedSupabase
-                .from("property_listings")
-                .select("*", { count: "exact", head: true })
-                .eq("owner_id", user.uid);
-            setListingCount(listC ?? 0);
+            const { data } = await getProfileStats(user.uid);
+            if (data) {
+                setSavedCount(data.savedCount);
+                setCommunityCount(data.communityCount);
+                setListingCount(data.listingCount);
+            }
         }
 
         fetchProfileData();

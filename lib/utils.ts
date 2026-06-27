@@ -3,7 +3,7 @@
  * File: lib/utils.ts
  * Purpose: General utility helpers.
  * Responsibilities: Provides class merges (Tailwind CSS v4 + clsx), visit score clamping, score labels, and color mappings.
- * Author: Antigravity Maintainer
+ * Author: srihanrajguduru
  * --------------------------------------------------------
  */
 

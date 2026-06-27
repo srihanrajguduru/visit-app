@@ -1,8 +1,17 @@
+/**
+ * --------------------------------------------------------
+ * File: app/mobile/map/page.tsx
+ * Purpose: Interactive map dashboard page for mobile.
+ * Responsibilities: Render map markers for neighborhoods, support click mapping, geolocation lookup, and detail overlay sheets.
+ * Author: srihanrajguduru
+ * --------------------------------------------------------
+ */
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { Area } from "@/types/database";
-import { supabase } from "@/lib/supabase";
+import { getAllMapAreas } from "@/app/actions/dbActions";
 import nextDynamic from "next/dynamic";
 
 const MobileMap = nextDynamic(() => import("@/components/mobile/MobileMap"), {
@@ -55,30 +64,18 @@ function MapDashboardContent() {
             setIsDataLoading(true);
             setLoadError(null);
 
-            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-            const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-            if (!supabaseUrl || !supabaseKey) {
-                setLoadError(`Missing env vars: URL=${!!supabaseUrl}, KEY=${!!supabaseKey}`);
-                setIsDataLoading(false);
-                return;
-            }
-
-            // Only fetch columns needed for map markers — much faster than SELECT *
-            const { data, error } = await supabase
-                .from("areas")
-                .select("id, name, latitude, longitude, current_visit_score")
-                .order("current_visit_score", { ascending: false });
+            // Fetch columns needed for map markers
+            const { data, error } = await getAllMapAreas();
 
             if (error) {
                 console.error("Supabase areas fetch error:", error);
-                setLoadError(`DB Error: ${error.message} (code: ${error.code})`);
+                setLoadError(`DB Error: ${error.message}`);
                 setIsDataLoading(false);
                 return;
             }
 
             if (!data || data.length === 0) {
-                setLoadError("No areas data returned. Check Supabase RLS policies for the 'areas' table.");
+                setLoadError("No areas data returned.");
                 setIsDataLoading(false);
                 return;
             }
@@ -112,28 +109,6 @@ function MapDashboardContent() {
         }
         load();
     }, [searchParams]);
-
-    // Real-time updates subscription
-    useEffect(() => {
-        const channel = supabase
-            .channel("score-updates-mobile")
-            .on(
-                "postgres_changes",
-                { event: "*", schema: "public", table: "visit_scores" },
-                async () => {
-                    const { data } = await supabase
-                        .from("areas")
-                        .select("*")
-                        .order("current_visit_score", { ascending: false });
-                    if (data) setAreas(data as Area[]);
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, []);
 
     // Map Click Intelligence Addon
     async function handleMapClick(lat: number, lng: number) {

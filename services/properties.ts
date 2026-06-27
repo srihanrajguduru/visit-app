@@ -3,7 +3,7 @@
  * File: services/properties.ts
  * Purpose: Property listings data access service.
  * Responsibilities: Handles listing retrieval by area/owner, listing creation with automatic score snapshotting, dynamic search filtering, nearby listings proximity math, and verification toggles.
- * Author: Antigravity Maintainer
+ * Author: srihanrajguduru
  * --------------------------------------------------------
  */
 

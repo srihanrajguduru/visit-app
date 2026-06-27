@@ -1,3 +1,12 @@
+/**
+ * --------------------------------------------------------
+ * File: app/(app)/dashboard/page.tsx
+ * Purpose: Desktop livability dashboard homepage.
+ * Responsibilities: Renders the full screen Google Map with overlays, search controls, and details sidebar panel.
+ * Author: srihanrajguduru
+ * --------------------------------------------------------
+ */
+
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -11,7 +20,7 @@ import { AreaPanel } from "@/components/score/AreaPanel";
 import PropertyListingsPanel from "@/components/dashboard/PropertyListingsPanel";
 import CommunityPanel from "@/components/dashboard/CommunityPanel";
 import ThemeToggle from "@/components/ThemeToggle";
-import { supabase } from "@/lib/supabase";
+import { getAllMapAreas, getAreaMetrics } from "@/app/actions/dbActions";
 import { getScoreColor } from "@/lib/utils";
 import type { Area, AreaMetrics } from "@/types/database";
 
@@ -52,10 +61,7 @@ export default function DashboardPage() {
     // Fetch areas
     useEffect(() => {
         async function load() {
-            const { data } = await supabase
-                .from("areas")
-                .select("*")
-                .order("current_visit_score", { ascending: false });
+            const { data } = await getAllMapAreas();
             if (data) setAreas(data as Area[]);
         }
         load();
@@ -68,37 +74,11 @@ export default function DashboardPage() {
             return;
         }
         async function loadMetrics() {
-            const { data } = await supabase
-                .from("area_metrics")
-                .select("*")
-                .eq("area_id", selectedArea!.id)
-                .order("created_at", { ascending: false })
-                .limit(1)
-                .single();
+            const { data } = await getAreaMetrics(selectedArea!.id);
             if (data) setMetrics(data as AreaMetrics);
         }
         loadMetrics();
     }, [selectedArea]);
-
-    // Subscribe to realtime score updates
-    useEffect(() => {
-        const channel = supabase
-            .channel("score-updates")
-            .on(
-                "postgres_changes",
-                { event: "*", schema: "public", table: "visit_scores" },
-                async () => {
-                    const { data } = await supabase
-                        .from("areas")
-                        .select("*")
-                        .order("current_visit_score", { ascending: false });
-                    if (data) setAreas(data as Area[]);
-                }
-            )
-            .subscribe();
-
-        return () => { supabase.removeChannel(channel); };
-    }, []);
 
     const onMarkerClick = useCallback((area: Area) => {
         setSelectedArea(area);

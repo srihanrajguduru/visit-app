@@ -1,9 +1,18 @@
+/**
+ * --------------------------------------------------------
+ * File: app/developer/community/page.tsx
+ * Purpose: Community board moderation dashboard for administrators.
+ * Responsibilities: Lists and filters recent neighborhood community messages, allowing delete moderation.
+ * Author: srihanrajguduru
+ * --------------------------------------------------------
+ */
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MessageSquare, Search, RefreshCw, Trash2, AlertCircle, Clock, Users } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { getAllCommunityPosts, deleteCommunityPost } from "@/app/actions/dbActions";
 
 
 
@@ -15,15 +24,10 @@ export default function CommunityModerationPage() {
 
     const fetchPosts = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from("community_posts")
-            .select("*, areas(name)")
-            .order("created_at", { ascending: false })
-            .limit(100);
+        const { data, error } = await getAllCommunityPosts();
 
         if (error) {
-            if (error.code === "42P01" || error.message.includes('Could not find the table')) setPosts(mockPosts);
-            else setMessage({ type: "error", text: error.message });
+            setMessage({ type: "error", text: error.message });
         } else {
             setPosts(data?.length ? data : mockPosts);
         }
@@ -34,7 +38,7 @@ export default function CommunityModerationPage() {
 
     const handleDelete = async (id: string) => {
         setPosts((prev) => prev.filter((p) => p.id !== id));
-        const { error } = await supabase.from("community_posts").delete().eq("id", id);
+        const { error } = await deleteCommunityPost(id);
         if (error) {
             setMessage({ type: "error", text: `Delete failed: ${error.message}` });
             fetchPosts();

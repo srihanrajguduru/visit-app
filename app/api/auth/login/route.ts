@@ -3,7 +3,7 @@
  * File: app/api/auth/login/route.ts
  * Purpose: Custom credential login endpoint.
  * Responsibilities: Verifies password hashes, signs session tokens, and sets HTTP-only cookies.
- * Author: Antigravity Maintainer
+ * Author: srihanrajguduru
  * --------------------------------------------------------
  */
 

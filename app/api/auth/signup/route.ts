@@ -3,7 +3,7 @@
  * File: app/api/auth/signup/route.ts
  * Purpose: Custom registration endpoint.
  * Responsibilities: Registers users locally, hashes passwords, initializes profiles, and signs session cookies.
- * Author: Antigravity Maintainer
+ * Author: srihanrajguduru
  * --------------------------------------------------------
  */
 

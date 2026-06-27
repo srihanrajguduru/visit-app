@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bed, Bath, Maximize2, Shield, Eye, Bookmark, MapPin, Building2, ChevronDown } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { getPropertyListings } from "@/app/actions/dbActions";
 import type { PropertyListing } from "@/types/database";
 
 
@@ -15,16 +15,12 @@ export default function MobilePropertyFeed({ areaId }: { areaId: string }) {
         if (!areaId) return;
         async function fetchListings() {
             setLoading(true);
-            const { data, error } = await supabase
-                .from("property_listings")
-                .select("*")
-                .eq("area_id", areaId)
-                .order("created_at", { ascending: false });
+            const { data, error } = await getPropertyListings(areaId);
 
             if (error) {
                 setListings(mockListings); // Fallback to demo
             } else {
-                setListings(data?.length ? (data as PropertyListing[]) : mockListings);
+                setListings(data?.length ? (data as unknown as PropertyListing[]) : mockListings);
             }
             setLoading(false);
         }

@@ -1,10 +1,19 @@
+/**
+ * --------------------------------------------------------
+ * File: app/developer/page.tsx
+ * Purpose: Developer and administrator control panel dashboard.
+ * Responsibilities: Provides high-level system indicators, database stats, and redirects to moderation/datasets/recalculations.
+ * Author: srihanrajguduru
+ * --------------------------------------------------------
+ */
+
 "use client";
 
 import { motion } from "framer-motion";
 import { Database, Map, Activity, Zap, Server, ShieldCheck, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { getAdminStats } from "@/app/actions/dbActions";
 
 
 
@@ -17,24 +26,14 @@ export default function DeveloperOverview() {
 
     useEffect(() => {
         async function loadStats() {
-            const { count: areasCount } = await supabase
-                .from('areas')
-                .select('*', { count: 'exact', head: true });
-
-            const { count: datasetsCount } = await supabase
-                .from('datasets')
-                .select('*', { count: 'exact', head: true });
-
-            const { data: scores } = await supabase.from('visit_scores').select('visit_score');
-            const avg = scores && scores.length > 0
-                ? scores.reduce((sum: number, curr: any) => sum + Number(curr.visit_score || 0), 0) / scores.length
-                : 0;
-
-            setStats({
-                areasCount: areasCount || 0,
-                datasetsCount: datasetsCount || 0,
-                avgScore: avg,
-            });
+            const { data } = await getAdminStats();
+            if (data) {
+                setStats({
+                    areasCount: data.areasCount,
+                    datasetsCount: data.datasetsCount,
+                    avgScore: data.avgScore,
+                });
+            }
         }
 
         loadStats();
@@ -186,9 +185,9 @@ export default function DeveloperOverview() {
                                         <span className="relative inline-flex rounded-full h-3 w-3" style={{ background: "var(--brand-secondary)" }} />
                                     </span>
                                     <div>
-                                        <h4 className="text-sm font-medium mb-1" style={{ color: "var(--brand-secondary)" }}>Database Sync Active</h4>
+                                        <h4 className="text-sm font-medium mb-1" style={{ color: "var(--brand-secondary)" }}>Database Connection Active</h4>
                                         <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                                            Supabase connection healthy. Realtime hooks for visit_scores attached and listening.
+                                            SQLite database connection healthy. Secure direct Server Actions active and listening.
                                         </p>
                                     </div>
                                 </div>

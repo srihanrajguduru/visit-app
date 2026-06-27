@@ -1,9 +1,18 @@
+/**
+ * --------------------------------------------------------
+ * File: app/developer/visit-score/page.tsx
+ * Purpose: Developer Visit Score control panel page.
+ * Responsibilities: Allows administrators to view neighborhood Visit Scores and manually trigger score recalculations.
+ * Author: srihanrajguduru
+ * --------------------------------------------------------
+ */
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Search, RefreshCw, Zap, Server, Activity, ShieldCheck, CheckCircle2, AlertCircle } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { getAllAreasAlphabetical, updateAreaScore } from "@/app/actions/dbActions";
 
 
 
@@ -17,7 +26,7 @@ export default function VisitScoreControlPage() {
 
     const fetchScores = async () => {
         setLoading(true);
-        const { data } = await supabase.from("areas").select("id, name, zone, current_visit_score").order("name");
+        const { data } = await getAllAreasAlphabetical();
         if (data) setAreas(data);
         setLoading(false);
     };
@@ -64,7 +73,7 @@ export default function VisitScoreControlPage() {
 
             // In reality, edge function does this
             for (const update of mockUpdates) {
-                await supabase.from("areas").update({ current_visit_score: update.current_visit_score }).eq("id", update.id);
+                await updateAreaScore(update.id, update.current_visit_score);
             }
 
             setMessage({ type: "success", text: `Successfully recalculated Visit Score for ${targetIds.length} areas.` });

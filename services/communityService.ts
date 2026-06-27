@@ -3,7 +3,7 @@
  * File: services/communityService.ts
  * Purpose: Community posts and moderation service.
  * Responsibilities: Handles fetching posts, adding comments, joining/leaving neighborhood communities, membership verification, and post deletion.
- * Author: Antigravity Maintainer
+ * Author: srihanrajguduru
  * --------------------------------------------------------
  */
 

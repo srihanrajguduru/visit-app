@@ -1,9 +1,18 @@
+/**
+ * --------------------------------------------------------
+ * File: app/developer/areas/page.tsx
+ * Purpose: Area management dashboard for administrators.
+ * Responsibilities: Allows creating, viewing, and listing grid areas (neighborhoods) and zones.
+ * Author: srihanrajguduru
+ * --------------------------------------------------------
+ */
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MapPin, Plus, Save, Search, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { getAllAreasAlphabetical, createArea } from "@/app/actions/dbActions";
 
 
 
@@ -24,10 +33,7 @@ export default function AreaManagementPage() {
 
     const fetchAreas = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from("areas")
-            .select("*")
-            .order("name", { ascending: true });
+        const { data, error } = await getAllAreasAlphabetical();
 
         if (error) {
             setError(error.message);
@@ -53,22 +59,20 @@ export default function AreaManagementPage() {
             return;
         }
 
-        const { data, error } = await supabase.from("areas").insert([
-            {
-                name: newArea.name,
-                latitude: parseFloat(newArea.latitude),
-                longitude: parseFloat(newArea.longitude),
-                zone: newArea.zone || "Unknown",
-                current_visit_score: 0
-            }
-        ]).select();
+        const { data, error } = await createArea({
+            name: newArea.name,
+            latitude: parseFloat(newArea.latitude),
+            longitude: parseFloat(newArea.longitude),
+            zone: newArea.zone || "Unknown",
+            current_visit_score: 0
+        });
 
         if (error) {
             setError(error.message);
         } else if (data) {
             setSuccess(`Area "${newArea.name}" added successfully!`);
             setNewArea({ name: "", latitude: "", longitude: "", zone: "" });
-            setAreas([...areas, data[0]].sort((a: any, b: any) => a.name.localeCompare(b.name)));
+            setAreas([...areas, data].sort((a: any, b: any) => a.name.localeCompare(b.name)));
         }
 
         setSaving(false);

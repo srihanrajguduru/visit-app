@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Home, Bed, Bath, Maximize2, MapPin, Shield, Eye, Bookmark, ChevronDown, ChevronUp, Building2, Search } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { getPropertyListings } from "@/app/actions/dbActions";
 import type { PropertyListing } from "@/types/database";
 
 
@@ -28,17 +28,13 @@ export default function PropertyListingsPanel({ areaId, areaName }: PropertyList
 
         async function fetchListings() {
             setLoading(true);
-            const { data, error } = await supabase
-                .from("property_listings")
-                .select("*")
-                .eq("area_id", areaId)
-                .order("created_at", { ascending: false });
+            const { data, error } = await getPropertyListings(areaId);
 
             if (error) {
                 // Use mock data for UI dev when table isn't created yet
                 setListings(mockListings);
             } else {
-                setListings(data?.length ? (data as PropertyListing[]) : mockListings);
+                setListings(data?.length ? (data as unknown as PropertyListing[]) : mockListings);
             }
             setLoading(false);
         }
