@@ -1,3 +1,4 @@
+<img width="1919" height="992" alt="Screenshot 2026-03-19 201505" src="https://github.com/user-attachments/assets/cefc5f04-5989-440c-914f-88185678a3aa" />
 # Vi-SiT (Vision for Your Next Site)
 
 > [!NOTE]
