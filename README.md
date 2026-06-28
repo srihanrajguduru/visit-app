@@ -1,6 +1,4 @@
-
 # Vi-SiT (Vision for Your Next Site)
-
 > [!NOTE]
 > **Internship Credentials:**
 > - [Innovation Internship Offer Letter](https://drive.google.com/file/d/1GmcfGlk_5hcTNkn0FH2sykYOl_8SIpfk/view?usp=drivesdk)
